@@ -1,0 +1,27 @@
+#######################################
+# Syntax Coloring Map
+#######################################
+
+#######################################
+# Datatypes (KEYWORD1)
+#######################################
+gbj_appbucket	KEYWORD1
+
+#######################################
+# Methods and Functions (KEYWORD2)
+#######################################
+run	KEYWORD2
+isr	KEYWORD2
+isRain	KEYWORD2
+setPeriod	KEYWORD2
+setDelay	KEYWORD2
+getPeriod	KEYWORD2
+getDuration	KEYWORD2
+getVolume	KEYWORD2
+getSpeed	KEYWORD2
+getDelay	KEYWORD2
+
+#######################################
+# Constants (LITERAL1)
+#######################################
+VERSION	LITERAL1
