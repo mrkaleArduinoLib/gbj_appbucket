@@ -40,7 +40,11 @@ class gbj_appbucket : gbj_appbase
 public:
   static const String VERSION;
 
-  inline gbj_appbucket() { _timer = new gbj_timer(Timing::PERIOD_CHECK); }
+  inline gbj_appbucket()
+  {
+    setDelay();
+    _timer = new gbj_timer(Timing::PERIOD_CHECK);
+  }
 
   /*
     Processing.
@@ -87,7 +91,10 @@ public:
 
   // Setters
   inline void setPeriod(unsigned long period) { _timer->setPeriod(period); }
-  inline void setDelay(byte delay) { _rainDelay = delay * 60000; }
+  inline void setDelay(byte delay = Timing::PERIOD_RAINFALL)
+  {
+    _rainDelay = delay * 60000;
+  }
 
   // Getters
   inline unsigned long getPeriod() { return _timer->getPeriod(); }
@@ -98,11 +105,11 @@ public:
   inline byte getDelay() { return _rainDelay / 60000; }
 
 private:
-  enum Timing : unsigned long
+  enum Timing : unsigned int
   {
     PERIOD_CHECK = 5147, // Prime number - Avoid useless collisions
-    PERIOD_DEBOUNCE = 50, // Debouncing delay
-    PERIOD_RAINFALL = 300000L, // 5 minutes - Delay between rainfalls
+    PERIOD_DEBOUNCE = 50, // Debouncing delay in milliseconds
+    PERIOD_RAINFALL = 5, // Delay between rainfalls in minutes
   };
   gbj_timer *_timer;
   const float BUCKET_FACTOR = 0.2794; // Rain millimeters per bucket tick
@@ -112,7 +119,7 @@ private:
   volatile unsigned long _rainStop; // Timestamp of the last tip in a rain
   unsigned int _rainTips; // Tips in a rain
   unsigned int _rainDuration; // Duration of a rain in seconds
-  unsigned long _rainDelay = Timing::PERIOD_RAINFALL; // Delay between rainfalls
+  unsigned long _rainDelay; // Delay between rainfalls in milliseconds
   float _rainVolume; // Rain millimeters in a rain
   float _rainSpeedTips; // Rain speed in tips per hour
   float _rainSpeedVolume; // Rain speed in millimeters per hour

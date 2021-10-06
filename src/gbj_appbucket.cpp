@@ -16,7 +16,7 @@ void gbj_appbucket::measure()
     if (!_isRain && _rainTips >= RAIN_TIPS)
     {
       _isRain = true;
-      SERIAL_TITLE("Rainfall...START");
+      SERIAL_VALUE("Rainfall", "START");
     }
     // Evaluate pending rainfall
     if (_isRain)
@@ -38,6 +38,6 @@ void gbj_appbucket::measure()
     _isRain = false;
     _rainStart = _rainStop = _rainTips = _rainVolume = _rainDuration =
       _rainSpeedTips = _rainSpeedVolume = 0;
-    SERIAL_TITLE("Rainfall...STOP");
+    SERIAL_VALUE("Rainfall", "STOP");
   }
 }
