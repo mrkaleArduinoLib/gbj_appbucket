@@ -43,7 +43,7 @@ public:
   inline gbj_appbucket()
   {
     setDelay();
-    _timer = new gbj_timer(Timing::PERIOD_CHECK);
+    timer_ = new gbj_timer(Timing::PERIOD_CHECK);
   }
 
   /*
@@ -59,7 +59,7 @@ public:
   */
   inline void run()
   {
-    if (_timer->run())
+    if (timer_->run())
     {
       measure();
     }
@@ -77,32 +77,32 @@ public:
   */
   inline void isr()
   {
-    if (millis() - _rainStop < Timing::PERIOD_DEBOUNCE)
+    if (millis() - rainStop_ < Timing::PERIOD_DEBOUNCE)
     {
       return;
     }
-    _tips++;
-    _rainStop = millis();
-    if (_rainStart == 0)
+    tips_++;
+    rainStop_ = millis();
+    if (rainStart_ == 0)
     {
-      _rainStart = _rainStop;
+      rainStart_ = rainStop_;
     }
   }
 
   // Setters
-  inline void setPeriod(unsigned long period) { _timer->setPeriod(period); }
+  inline void setPeriod(unsigned long period) { timer_->setPeriod(period); }
   inline void setDelay(byte delay = Timing::PERIOD_RAINFALL)
   {
-    _rainDelay = delay * 60000;
+    rainDelay_ = delay * 60000;
   }
 
   // Getters
-  inline unsigned long getPeriod() { return _timer->getPeriod(); }
-  inline bool isRain() { return _isRain; }
-  inline unsigned int getDuration() { return _rainDuration; }
-  inline float getVolume() { return _rainVolume; }
-  inline float getSpeed() { return _rainSpeedVolume; }
-  inline byte getDelay() { return _rainDelay / 60000; }
+  inline unsigned long getPeriod() { return timer_->getPeriod(); }
+  inline bool isRain() { return isRain_; }
+  inline unsigned int getDuration() { return rainDuration_; }
+  inline float getVolume() { return rainVolume_; }
+  inline float getSpeed() { return rainSpeedVolume_; }
+  inline byte getDelay() { return rainDelay_ / 60000; }
 
 private:
   enum Timing : unsigned int
@@ -111,19 +111,19 @@ private:
     PERIOD_DEBOUNCE = 50, // Debouncing delay in milliseconds
     PERIOD_RAINFALL = 5, // Delay between rainfalls in minutes
   };
-  gbj_timer *_timer;
+  gbj_timer *timer_;
   const float BUCKET_FACTOR = 0.2794; // Rain millimeters per bucket tick
   const byte RAIN_TIPS = 3; // Minimal number of tips for rainfall recognition
-  volatile unsigned int _tips; // Tips since recent main processing
-  volatile unsigned long _rainStart; // Timestamp of the first tip in a rain
-  volatile unsigned long _rainStop; // Timestamp of the last tip in a rain
-  unsigned int _rainTips; // Tips in a rain
-  unsigned int _rainDuration; // Duration of a rain in seconds
-  unsigned long _rainDelay; // Delay between rainfalls in milliseconds
-  float _rainVolume; // Rain millimeters in a rain
-  float _rainSpeedTips; // Rain speed in tips per hour
-  float _rainSpeedVolume; // Rain speed in millimeters per hour
-  bool _isRain; // Flag about pending rainfall
+  volatile unsigned int tips_; // Tips since recent main processing
+  volatile unsigned long rainStart_; // Timestamp of the first tip in a rain
+  volatile unsigned long rainStop_; // Timestamp of the last tip in a rain
+  unsigned int rainTips_; // Tips in a rain
+  unsigned int rainDuration_; // Duration of a rain in seconds
+  unsigned long rainDelay_; // Delay between rainfalls in milliseconds
+  float rainVolume_; // Rain millimeters in a rain
+  float rainSpeedTips_; // Rain speed in tips per hour
+  float rainSpeedVolume_; // Rain speed in millimeters per hour
+  bool isRain_; // Flag about pending rainfall
 
   void measure();
 };
