@@ -146,8 +146,8 @@ The methods are just straitforward implementation of the virual methods from the
 ## setDelay()
 
 #### Description
-The method sets the _RDP_ in minutes for determing begining and end of a rainfall.
-- The rainfall begining, i.e, a new rainfall is detected when at least 3 bucket tips have happend within that period.
+The method sets the _RDP_ in minutes for determing beginning and end of a rainfall.
+- The rainfall beginning, i.e, a new rainfall is detected when at least 3 bucket tips have happend within that period.
 - The rainfall end is detected after that period from the very recent bucket tip.
 
 #### Syntax
@@ -219,7 +219,7 @@ Duration of the pending or recent rainfall in seconds. The maximal rain duration
 #### Description
 The method returns rain water volume in millimeters per square meter of the current or recent rainfall.
 - The volume is calculated from the very first bucket tip until the recent tip.
-- During the pending rainfall its volumne is suitable for publishing to the IoT platform as telemetry.
+- During the pending rainfall its volume is suitable for publishing to the IoT platform as telemetry.
 
 #### Syntax
     float getVolume()
