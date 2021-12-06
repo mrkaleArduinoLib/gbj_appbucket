@@ -30,7 +30,6 @@
 #endif
 #include "gbj_appcore.h"
 #include "gbj_serial_debug.h"
-#include "gbj_timer.h"
 
 #undef SERIAL_PREFIX
 #define SERIAL_PREFIX "gbj_appbucket"
@@ -43,7 +42,9 @@ public:
   {
     RAIN_NONE,
     RAIN_LIGHT,
+    RAIN_SHOWER,
     RAIN_MODERATE,
+    RAIN_STRONG,
     RAIN_HEAVY,
     RAIN_INTENSE,
     RAIN_TORRENTIAL,
@@ -97,25 +98,23 @@ public:
     }
   }
 
-  void rainCalculate(); // Evaluate pending rainfall
-  RainIntensity rainIntensity(float rainRate); // Calculate rain intensity
-
   // Setters
   inline void setDelay(byte delay = Timing::PERIOD_RAINFALL_END)
   {
     // Input delay in minutes
-    rainDelay_ = delay * 60000;
+    rainDelay_ = delay * 60;
   }
 
   // Getters
   inline bool isRain() { return isRain_; }
+  inline unsigned long getOffset() { return rainOffset_; }
+  inline unsigned int getDelay() { return rainDelay_ / 60; }
   inline unsigned int getDuration() { return rainDuration_; }
-  inline unsigned int getSpan() { return rainSpan_; }
   inline unsigned int getTips() { return rainTips_; }
   inline float getVolume() { return rainVolume_; }
   inline float getRate() { return rainRate_; }
   inline float getRateTips() { return rainRateTips_; }
-  inline byte getDelay() { return rainDelay_ / 60000; }
+  RainIntensity getIntens();
 
 private:
   enum Timing : unsigned int
@@ -127,14 +126,21 @@ private:
   volatile unsigned int tips_; // Tips since recent main processing
   volatile unsigned long rainStart_; // Timestamp of the first tip in a rain
   volatile unsigned long rainStop_; // Timestamp of the last tip in a rain
-  unsigned int rainDuration_; // Duration of a rain in seconds to current time
-  unsigned int rainSpan_; // Duration of a rain in seconds to recent tip
-  unsigned long rainDelay_; // Delay between rainfalls in milliseconds
+  unsigned long rainOffset_; // Time in seconds from recent tip
+  unsigned int rainDuration_; // Time in seconds between first and last tip
+  unsigned int rainDelay_; // Delay between rainfalls in seconds
   unsigned int rainTips_; // Tips in a rain
   float rainVolume_; // Rain millimeters in a rain
   float rainRateTips_; // Rain speed in tips per hour
   float rainRate_; // Rain speed in millimeters per hour
   bool isRain_; // Flag about pending rainfall
+
+  // Rain rate level thresholds for particular hour of rain duration
+  float rainThreshold_[3][7] = {
+    { 58, 23, 15, 10, 5, 1, 0 }, // 1st hour
+    { 64, 30.5, 21, 14, 7.5, 1.5, 0 }, // 2-nd hour
+    { 72, 33, 23.5, 11.5, 9, 2, 0 }, // 3rd or higher hour
+  };
 
   void rainProcessTips(); // Process bucket tips
   void rainDetectEnd(); // Detect end of current rainfall

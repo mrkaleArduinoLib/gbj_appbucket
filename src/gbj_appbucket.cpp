@@ -12,33 +12,26 @@ void gbj_appbucket::rainProcessTips()
   }
   isRain_ = true;
   rainVolume_ = float(rainTips_ * BUCKET_FACTOR);
-  rainSpan_ = (rainStop_ - rainStart_) / 1000;
+  rainDuration_ = (rainStop_ - rainStart_) / 1000;
+  rainRateTips_ = -1;
+  rainRate_ = -1;
+  if (rainDuration_)
+  {
+    rainRateTips_ = float((rainTips_ - 1) * 3600) / float(rainDuration_);
+    rainRate_ = rainRateTips_ * BUCKET_FACTOR;
+  }
   SERIAL_VALUE("tips", tips);
   SERIAL_VALUE("rainTips", rainTips_);
   SERIAL_VALUE("rainVolume", rainVolume_);
-  SERIAL_VALUE("rainSpan", rainSpan_);
-  rainCalculate();
-}
-
-void gbj_appbucket::rainCalculate()
-{
-  if (isRain_)
-  {
-    rainDuration_ = (millis() - rainStart_) / 1000;
-    SERIAL_VALUE("rainDuration", rainDuration_);
-    if (rainDuration_)
-    {
-      rainRateTips_ = float((rainTips_ - 1) * 3600) / float(rainDuration_);
-      rainRate_ = rainRateTips_ * BUCKET_FACTOR;
-      SERIAL_VALUE("rainRate", rainRate_);
-      SERIAL_VALUE("rainRateTips", rainRateTips_);
-    }
-  }
+  SERIAL_VALUE("rainDuration", rainDuration_);
+  SERIAL_VALUE("rainRate", rainRate_);
+  SERIAL_VALUE("rainRateTips", rainRateTips_);
 }
 
 void gbj_appbucket::rainDetectEnd()
 {
-  if (isRain_ && millis() - rainStop_ > rainDelay_)
+  rainOffset_ = (millis() - rainStop_) / 1000;
+  if (isRain_ && rainOffset_ > rainDelay_)
   {
     isRain_ = false;
     rainStart_ = rainStop_ = rainTips_ = rainVolume_ = rainDuration_ =
@@ -47,30 +40,25 @@ void gbj_appbucket::rainDetectEnd()
   }
 }
 
-gbj_appbucket::RainIntensity gbj_appbucket::rainIntensity(float rainRate)
+gbj_appbucket::RainIntensity gbj_appbucket::getIntens()
 {
-  if (rainRate > 30.0)
+  byte thr = sizeof(rainThreshold_) / sizeof(rainThreshold_[0]) - 1;
+  byte levels = sizeof(rainThreshold_[0]) / sizeof(rainThreshold_[0][0]);
+  byte hour = min((byte)floor((float)rainDuration_ / 3600.0), thr);
+  RainIntensity rainLevel =
+    isRain_ ? RainIntensity::RAIN_UNKNOWN : RainIntensity::RAIN_NONE;
+  if (rainRate_ > 0)
   {
-    return RainIntensity::RAIN_TORRENTIAL;
+    rainLevel = RainIntensity::RAIN_LIGHT;
+    for (byte i = 0; i < levels; i++)
+    {
+      if (rainRate_ > rainThreshold_[hour][i])
+      {
+        rainLevel = (RainIntensity)(levels - i);
+        break;
+      }
+    }
   }
-  else if (rainRate > 15.0)
-  {
-    return RainIntensity::RAIN_INTENSE;
-  }
-  else if (rainRate > 7.5)
-  {
-    return RainIntensity::RAIN_HEAVY;
-  }
-  else if (rainRate > 2.5)
-  {
-    return RainIntensity::RAIN_MODERATE;
-  }
-  else if (rainRate > 0.0)
-  {
-    return RainIntensity::RAIN_LIGHT;
-  }
-  else
-  {
-    return RainIntensity::RAIN_NONE;
-  }
+  SERIAL_VALUE("rainLevel", rainLevel);
+  return rainLevel;
 }
