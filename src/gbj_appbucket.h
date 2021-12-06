@@ -38,7 +38,7 @@ class gbj_appbucket : gbj_appcore
 {
 public:
   static const String VERSION;
-  enum RainIntensity
+  enum RainIntensity : byte
   {
     RAIN_NONE,
     RAIN_LIGHT,

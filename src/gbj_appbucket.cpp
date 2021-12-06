@@ -15,9 +15,10 @@ void gbj_appbucket::rainProcessTips()
   rainDuration_ = (rainStop_ - rainStart_) / 1000;
   rainRateTips_ = -1;
   rainRate_ = -1;
-  if (rainDuration_)
+  if (rainStop_ > rainStart_)
   {
-    rainRateTips_ = float((rainTips_ - 1) * 3600) / float(rainDuration_);
+    rainRateTips_ =
+      float((rainTips_ - 1) * 3600000L) / float(rainStop_ - rainStart_);
     rainRate_ = rainRateTips_ * BUCKET_FACTOR;
   }
   SERIAL_VALUE("tips", tips);
