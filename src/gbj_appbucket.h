@@ -38,18 +38,6 @@ class gbj_appbucket : gbj_appcore
 {
 public:
   static const String VERSION;
-  enum RainIntensity : byte
-  {
-    RAIN_NONE,
-    RAIN_LIGHT,
-    RAIN_SHOWER,
-    RAIN_MODERATE,
-    RAIN_STRONG,
-    RAIN_HEAVY,
-    RAIN_INTENSE,
-    RAIN_TORRENTIAL,
-    RAIN_UNKNOWN,
-  };
 
   inline gbj_appbucket() {}
 
@@ -114,13 +102,25 @@ public:
   inline float getVolume() { return rainVolume_; }
   inline float getRate() { return rainRate_; }
   inline float getRateTips() { return rainRateTips_; }
-  RainIntensity getIntens();
+  byte getIntens();
 
 private:
   enum Timing : unsigned int
   {
     PERIOD_DEBOUNCE = 50, // Debouncing delay in milliseconds
     PERIOD_RAINFALL_END = 20, // Delay between rainfalls in minutes
+  };
+  enum RainIntensity : byte
+  {
+    RAIN_NONE,
+    RAIN_LIGHT,
+    RAIN_SHOWER,
+    RAIN_MODERATE,
+    RAIN_STRONG,
+    RAIN_HEAVY,
+    RAIN_INTENSE,
+    RAIN_TORRENTIAL,
+    RAIN_UNKNOWN,
   };
   const float BUCKET_FACTOR = 0.2794; // Rain millimeters per bucket tick
   volatile unsigned int tips_; // Tips since recent main processing

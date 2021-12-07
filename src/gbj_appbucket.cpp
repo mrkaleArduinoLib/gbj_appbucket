@@ -41,7 +41,7 @@ void gbj_appbucket::rainDetectEnd()
   }
 }
 
-gbj_appbucket::RainIntensity gbj_appbucket::getIntens()
+byte gbj_appbucket::getIntens()
 {
   byte thr = sizeof(rainThreshold_) / sizeof(rainThreshold_[0]) - 1;
   byte levels = sizeof(rainThreshold_[0]) / sizeof(rainThreshold_[0][0]);
@@ -61,5 +61,5 @@ gbj_appbucket::RainIntensity gbj_appbucket::getIntens()
     }
   }
   SERIAL_VALUE("rainLevel", rainLevel);
-  return rainLevel;
+  return (byte)rainLevel;
 }
