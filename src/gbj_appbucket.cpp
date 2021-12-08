@@ -37,6 +37,8 @@ void gbj_appbucket::rainDetectEnd()
     isRain_ = false;
     rainStart_ = rainStop_ = rainTips_ = rainVolume_ = rainDuration_ =
       rainRateTips_ = rainRate_ = 0;
+    rainfalls_++;
+    SERIAL_VALUE("rainfalls_", rainfalls_);
     SERIAL_VALUE("Rainfall", "STOP");
   }
 }

@@ -92,6 +92,7 @@ public:
     // Input delay in minutes
     rainDelay_ = delay * 60;
   }
+  inline void setRainfalls(unsigned int rainfalls = 0) { rainfalls_ = rainfalls; }
 
   // Getters
   inline bool isRain() { return isRain_; }
@@ -99,6 +100,7 @@ public:
   inline unsigned int getDelay() { return rainDelay_ / 60; }
   inline unsigned int getDuration() { return rainDuration_; }
   inline unsigned int getTips() { return rainTips_; }
+  inline unsigned int getRainfalls() { return rainfalls_; };
   inline float getVolume() { return rainVolume_; }
   inline float getRate() { return rainRate_; }
   inline float getRateTips() { return rainRateTips_; }
@@ -130,6 +132,7 @@ private:
   unsigned int rainDuration_; // Time in seconds between first and last tip
   unsigned int rainDelay_; // Delay between rainfalls in seconds
   unsigned int rainTips_; // Tips in a rain
+  unsigned int rainfalls_; // Number of rain ends detected (stored in EEPROM)
   float rainVolume_; // Rain millimeters in a rain
   float rainRateTips_; // Rain speed in tips per hour
   float rainRate_; // Rain speed in millimeters per hour
