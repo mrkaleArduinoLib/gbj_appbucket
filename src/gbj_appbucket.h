@@ -132,7 +132,7 @@ private:
   unsigned int rainDuration_; // Time in seconds between first and last tip
   unsigned int rainDelay_; // Delay between rainfalls in seconds
   unsigned int rainTips_; // Tips in a rain
-  unsigned int rainfalls_; // Number of rain ends detected (stored in EEPROM)
+  unsigned int rainfalls_; // Number of rains detected (stored in EEPROM)
   float rainVolume_; // Rain millimeters in a rain
   float rainRateTips_; // Rain speed in tips per hour
   float rainRate_; // Rain speed in millimeters per hour
