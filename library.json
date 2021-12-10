@@ -13,8 +13,7 @@
     "espressif32"
   ],
   "dependencies": {
-    "mrkaleArduinoLib/gbj_appbase": "*",
-    "mrkaleArduinoLib/gbj_serial_debug": "*",
-    "mrkaleArduinoLib/gbj_timer": "*"
+    "mrkaleArduinoLib/gbj_appcore": "*",
+    "mrkaleArduinoLib/gbj_serial_debug": "*"
   }
 }
