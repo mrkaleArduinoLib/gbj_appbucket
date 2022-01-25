@@ -39,7 +39,30 @@ class gbj_appbucket : gbj_appcore
 public:
   static const String VERSION;
 
-  inline gbj_appbucket() {}
+  typedef void Handler();
+
+  struct Handlers
+  {
+    Handler *onRainfallStart;
+    Handler *onRainfallEnd;
+  };
+
+  /*
+    Constructor
+
+    DESCRIPTION:
+    Constructor creates the class instance object and sets operational
+    parameters.
+
+    PARAMETERS:
+    handlers - A structure with pointers to various callback handler functions.
+      - Data type: Handlers
+      - Default value: structure with zeroed all handlers
+      - Limited range: system address range
+
+    RETURN: object
+  */
+  inline gbj_appbucket(Handlers handlers = Handlers()) { handlers_ = handlers; }
 
   /*
     Processing.
@@ -87,24 +110,23 @@ public:
   }
 
   // Setters
-  inline void setDelay(byte delay = Timing::PERIOD_RAINFALL_END)
+  inline void setDelay(byte rainDelay = Timing::PERIOD_RAINFALL_END)
   {
-    // Input delay in minutes
-    rainDelay_ = delay * 60;
+    rainDelay_ = rainDelay * 60;
   }
-  inline void setRainfalls(unsigned int rainfalls = 0) { rainfalls_ = rainfalls; }
+  inline void setRainfalls(byte rainfalls = 0) { rainfalls_ = rainfalls; }
 
   // Getters
   inline bool isRain() { return isRain_; }
+  inline byte getDelay() { return rainDelay_ / 60; }
+  inline byte getRainfalls() { return rainfalls_; };
   inline unsigned long getOffset() { return rainOffset_; }
-  inline unsigned int getDelay() { return rainDelay_ / 60; }
   inline unsigned int getDuration() { return rainDuration_; }
   inline unsigned int getTips() { return rainTips_; }
-  inline unsigned int getRainfalls() { return rainfalls_; };
   inline float getVolume() { return rainVolume_; }
   inline float getRate() { return rainRate_; }
   inline float getRateTips() { return rainRateTips_; }
-  byte getIntens();
+  byte getIntensity();
 
 private:
   enum Timing : unsigned int
@@ -124,15 +146,16 @@ private:
     RAIN_TORRENTIAL,
     RAIN_UNKNOWN,
   };
+  Handlers handlers_;
   const float BUCKET_FACTOR = 0.2794; // Rain millimeters per bucket tick
   volatile unsigned int tips_; // Tips since recent main processing
   volatile unsigned long rainStart_; // Timestamp of the first tip in a rain
   volatile unsigned long rainStop_; // Timestamp of the last tip in a rain
   unsigned long rainOffset_; // Time in seconds from recent tip
   unsigned int rainDuration_; // Time in seconds between first and last tip
-  unsigned int rainDelay_; // Delay between rainfalls in seconds
   unsigned int rainTips_; // Tips in a rain
-  unsigned int rainfalls_; // Number of rains detected (stored in EEPROM)
+  unsigned int rainDelay_; // Delay between rainfalls in seconds (EEPROM)
+  byte rainfalls_; // Number of rains detected (EEPROM)
   float rainVolume_; // Rain millimeters in a rain
   float rainRateTips_; // Rain speed in tips per hour
   float rainRate_; // Rain speed in millimeters per hour

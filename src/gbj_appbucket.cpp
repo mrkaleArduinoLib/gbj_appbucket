@@ -8,8 +8,12 @@ void gbj_appbucket::rainProcessTips()
   rainTips_ += tips;
   if (!isRain_)
   {
-    SERIAL_VALUE("Rainfall", "START");
+    SERIAL_VALUE("Rainfall", "START")
     rainfalls_++;
+    if (handlers_.onRainfallStart)
+    {
+      handlers_.onRainfallStart();
+    }
   }
   isRain_ = true;
   rainVolume_ = float(rainTips_ * BUCKET_FACTOR);
@@ -22,12 +26,12 @@ void gbj_appbucket::rainProcessTips()
       float((rainTips_ - 1) * 3600000L) / float(rainStop_ - rainStart_);
     rainRate_ = rainRateTips_ * BUCKET_FACTOR;
   }
-  SERIAL_VALUE("tips", tips);
-  SERIAL_VALUE("rainTips", rainTips_);
-  SERIAL_VALUE("rainVolume", rainVolume_);
-  SERIAL_VALUE("rainDuration", rainDuration_);
-  SERIAL_VALUE("rainRate", rainRate_);
-  SERIAL_VALUE("rainRateTips", rainRateTips_);
+  SERIAL_VALUE("tips", tips)
+  SERIAL_VALUE("rainTips", rainTips_)
+  SERIAL_VALUE("rainVolume", rainVolume_)
+  SERIAL_VALUE("rainDuration", rainDuration_)
+  SERIAL_VALUE("rainRate", rainRate_)
+  SERIAL_VALUE("rainRateTips", rainRateTips_)
 }
 
 void gbj_appbucket::rainDetectEnd()
@@ -38,12 +42,16 @@ void gbj_appbucket::rainDetectEnd()
     isRain_ = false;
     rainStart_ = rainStop_ = rainTips_ = rainVolume_ = rainDuration_ =
       rainRateTips_ = rainRate_ = 0;
-    SERIAL_VALUE("rainfalls_", rainfalls_);
-    SERIAL_VALUE("Rainfall", "STOP");
+    SERIAL_VALUE("rainfalls_", rainfalls_)
+    SERIAL_VALUE("Rainfall", "STOP")
+    if (handlers_.onRainfallEnd)
+    {
+      handlers_.onRainfallEnd();
+    }
   }
 }
 
-byte gbj_appbucket::getIntens()
+byte gbj_appbucket::getIntensity()
 {
   byte thr = sizeof(rainThreshold_) / sizeof(rainThreshold_[0]) - 1;
   byte levels = sizeof(rainThreshold_[0]) / sizeof(rainThreshold_[0][0]);
@@ -62,6 +70,6 @@ byte gbj_appbucket::getIntens()
       }
     }
   }
-  SERIAL_VALUE("rainLevel", rainLevel);
+  SERIAL_VALUE("rainLevel", rainLevel)
   return (byte)rainLevel;
 }
