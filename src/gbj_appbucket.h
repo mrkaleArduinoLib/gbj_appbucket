@@ -120,13 +120,13 @@ public:
   inline bool isRain() { return isRain_; }
   inline byte getDelay() { return rainDelay_ / 60; }
   inline byte getRainfalls() { return rainfalls_; };
+  inline byte getIntensity() { return (byte)rainLevel_; };
   inline unsigned long getOffset() { return rainOffset_; }
   inline unsigned int getDuration() { return rainDuration_; }
   inline unsigned int getTips() { return rainTips_; }
   inline float getVolume() { return rainVolume_; }
   inline float getRate() { return rainRate_; }
   inline float getRateTips() { return rainRateTips_; }
-  byte getIntensity();
 
 private:
   enum Timing : unsigned int
@@ -160,6 +160,7 @@ private:
   float rainRateTips_; // Rain speed in tips per hour
   float rainRate_; // Rain speed in millimeters per hour
   bool isRain_; // Flag about pending rainfall
+  RainIntensity rainLevel_; // Level of a rain intensity
 
   // Rain rate level thresholds for particular hour of rain duration
   float rainThreshold_[3][7] = {
@@ -170,6 +171,7 @@ private:
 
   void rainProcessTips(); // Process bucket tips
   void rainDetectEnd(); // Detect end of current rainfall
+  void rainLevel(); // Calculate the rain level
 };
 
 #endif

@@ -8,8 +8,9 @@ void gbj_appbucket::rainProcessTips()
   rainTips_ += tips;
   if (!isRain_)
   {
-    SERIAL_VALUE("Rainfall", "START")
     rainfalls_++;
+    SERIAL_VALUE("Rainfall", "START")
+    SERIAL_VALUE("rainfalls", rainfalls_)
     if (handlers_.onRainfallStart)
     {
       handlers_.onRainfallStart();
@@ -22,16 +23,17 @@ void gbj_appbucket::rainProcessTips()
   rainRate_ = -1;
   if (rainStop_ > rainStart_)
   {
-    rainRateTips_ =
-      float((rainTips_ - 1) * 3600000L) / float(rainStop_ - rainStart_);
+    rainRateTips_ = float((rainTips_ - 1) * 3600) / float(rainDuration_);
     rainRate_ = rainRateTips_ * BUCKET_FACTOR;
   }
+  rainLevel();
   SERIAL_VALUE("tips", tips)
   SERIAL_VALUE("rainTips", rainTips_)
   SERIAL_VALUE("rainVolume", rainVolume_)
   SERIAL_VALUE("rainDuration", rainDuration_)
   SERIAL_VALUE("rainRate", rainRate_)
   SERIAL_VALUE("rainRateTips", rainRateTips_)
+  SERIAL_VALUE("rainLevel", rainLevel_)
 }
 
 void gbj_appbucket::rainDetectEnd()
@@ -40,9 +42,9 @@ void gbj_appbucket::rainDetectEnd()
   if (isRain_ && rainOffset_ > rainDelay_)
   {
     isRain_ = false;
+    rainLevel_ = RainIntensity::RAIN_NONE;
     rainStart_ = rainStop_ = rainTips_ = rainVolume_ = rainDuration_ =
       rainRateTips_ = rainRate_ = 0;
-    SERIAL_VALUE("rainfalls_", rainfalls_)
     SERIAL_VALUE("Rainfall", "STOP")
     if (handlers_.onRainfallEnd)
     {
@@ -51,25 +53,22 @@ void gbj_appbucket::rainDetectEnd()
   }
 }
 
-byte gbj_appbucket::getIntensity()
+void gbj_appbucket::rainLevel()
 {
   byte thr = sizeof(rainThreshold_) / sizeof(rainThreshold_[0]) - 1;
   byte levels = sizeof(rainThreshold_[0]) / sizeof(rainThreshold_[0][0]);
   byte hour = min((byte)floor((float)rainDuration_ / 3600.0), thr);
-  RainIntensity rainLevel =
-    isRain_ ? RainIntensity::RAIN_UNKNOWN : RainIntensity::RAIN_NONE;
+  rainLevel_ = isRain_ ? RainIntensity::RAIN_UNKNOWN : RainIntensity::RAIN_NONE;
   if (rainRate_ > 0)
   {
-    rainLevel = RainIntensity::RAIN_LIGHT;
+    rainLevel_ = RainIntensity::RAIN_LIGHT;
     for (byte i = 0; i < levels; i++)
     {
       if (rainRate_ > rainThreshold_[hour][i])
       {
-        rainLevel = (RainIntensity)(levels - i);
+        rainLevel_ = (RainIntensity)(levels - i);
         break;
       }
     }
   }
-  SERIAL_VALUE("rainLevel", rainLevel)
-  return (byte)rainLevel;
 }
