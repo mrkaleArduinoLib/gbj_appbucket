@@ -62,7 +62,11 @@ public:
 
     RETURN: object
   */
-  inline gbj_appbucket(Handlers handlers = Handlers()) { handlers_ = handlers; }
+  inline gbj_appbucket(Handlers handlers = Handlers())
+  {
+    handlers_ = handlers;
+    setDelay();
+  }
 
   /*
     Processing.
@@ -163,7 +167,7 @@ private:
   RainIntensity rainLevel_; // Level of a rain intensity
 
   // Rain rate level thresholds for particular hour of rain duration
-  float rainThreshold_[3][7] = {
+  const float rainThreshold_[3][7] = {
     { 58, 23, 15, 10, 5, 1, 0 }, // 1st hour
     { 64, 30.5, 21, 14, 7.5, 1.5, 0 }, // 2-nd hour
     { 72, 33, 23.5, 11.5, 9, 2, 0 }, // 3rd or higher hour

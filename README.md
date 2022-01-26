@@ -1,28 +1,42 @@
 <a id="library"></a>
 
 # gbj\_appbucket
-This is an application library, which is used usually as a project library for particular PlatformIO project. However; in every project utilizing the rainfall tipping bucket should be copied the same library, so that it is located in central library storage.
+This is an application library, which is used usually as a project library for particular PlatformIO project. It encapsulates the functionality of a `Rainfall Tipping Bucket`. The encapsulation provides following advantages:
 
-- Library specifies (inherits from) the application `gbj_appcore` library.
-- Library utilizes error handling from the parent class.
-- Library processes rainfall tipping bucket impulses for detecting and evaluating a rainfall.
-- A rainfall finish is considered at the end of the particular time period since recent bucket tip, which is usually 15 or 20 minutes.
-- A rainfall starts at the very first bucket tip after eventual previous rainfall, since recent boot of a microcontroller.
-- Rain parameters are evaluated for a time period from the first bucket tip to the last one in a rainfall.
+* Functionality is hidden from the main sketch.
+* The library follows the principle `separation of concern`.
+* The library is reusable for various projects without need to code the bucket management.
+* Update in library is valid for all involved projects.
+* It specifies (inherits from) the parent application library `gbj_appcore`.
+* It utilizes funcionality and error handling from the parent class.
+
+
+## Fundamental functionality
+
+* The functionality is represented within this library by a class method called by an `Interuption Service Routine` usually in the main sketch at each tip of a GPIO pin of a microcontroller sensing a bucket's reed switch.
+* The library processes the bucket tips for detecting and evaluating a rainfall.
+* Tips are sensed by impulses of a bucket's reed switch, which are caught by an `Interuption Service Routine` (referred to as "ISR") usually in the main sketch. At each interrupstion the ISR calls corresponding method of the library for further processing.
+* A rainfall starts at the very first bucket tip after eventual previous rainfall, since recent boot of a microcontroller.
+* A rainfall finishes at the end of the particular time period since recent bucket tip, which is internally defaulted to 20 minutes. This time period can be changed externally by calling corresponding setter, e.g., from an IoT platform or mobile application.
+* Rain parameters are evaluated for a time period from the first bucket tip to the last one in a rainfall.
 
 
 <a id="intensity"></a>
 
 ## Rain intensity levels
-The rain intensity level is determined by ranking the rain rate in millimeters pre square meter for an hour and for each hour of rain duration.
-- The library distinguishes 8 rain levels entirely.
-    - 6 rain intensity levels are dedicated for 3 ranks of rain duration during a rainfall, namely for 1st hour, 2nd hour, and 3rd hours or more.
-    - 1 rain intensity level is dedicated for a rainfall start with just one bucket tip, which represents unknown rain intensity level.
-    - 1 rain level is dedicated for no rain situation, i.e., between rainfalls.
-- In the following table the numerical values are thresholds for determining particular level in millimeters pre squar meter for an hour. The threshold is the lowest (staring) value for a level as depicted in the table just for lowest rain level.
+The rain intensity level is determined by ranking the rain rate in millimeters pre square meter for an hour and for each hour order of the rain duration.
+
+* The library distinguishes 8 rain levels entirely.
+
+    * 6 rain intensity levels are dedicated for 3 ranks of rain duration during a rainfall, namely for 1st hour, 2nd hour, and 3rd and following hours.
+    * 1 rain intensity level is dedicated for a rainfall start with just one bucket tip, which represents unknown rain intensity level.
+    * 1 rain level is dedicated for no rain situation, i.e., between rainfalls.
+
+
+* In the following table the numerical values are thresholds for determining particular level in millimeters pre squar meter for an hour. The threshold is the lowest (starting) value for a level as depicted in the following table.
 
 |Level|1st hr.|2nd hr.|3rd+ hr.|Rain|
-|:---:|:---:|:---:|:---:|:---:|
+|:---:|:---:|:---:|:---:|:---|
 |0|=0|=0|=0|None|
 |1|>0|>0|>0|Light|
 |2|1|1.5|2|Shower|
@@ -38,55 +52,134 @@ The rain intensity level is determined by ranking the rain rate in millimeters p
 
 ## Dependency
 
-- **gbj\_appcore**: Parent library loaded from the file `gbj_appbase.h`.
-- **gbj\_serial\_debug**: Auxilliary library for debug serial output loaded from the file `gbj_serial_debug.h`. It enables to exclude serial outputs from final compilation.
+* **gbj\_appcore**: Parent library loaded from the file `gbj_appcore.h`.
+* **gbj\_serial\_debug**: Auxilliary library for debug serial output loaded from the file `gbj_serial_debug.h`. It enables to exclude serial outputs from final (production) compilation.
 
 #### Espressif ESP8266 platform
-- **Arduino.h**: Main include file for the Arduino platform.
+* **Arduino.h**: Main include file for the Arduino platform.
 
 #### Espressif ESP32 platform
-- **Arduino.h**: Main include file for the Arduino platform.
+* **Arduino.h**: Main include file for the Arduino platform.
 
 #### Particle platform
-- **Particle.h**: Includes alternative (C++) data type definitions.
+* **Particle.h**: Includes alternative (C++) data type definitions.
 
 
 <a id="constants"></a>
 
 ## Constants
 
-- **gbj\_appbucket::VERSION**: Name and semantic version of the library.
+* **gbj\_appbucket::VERSION**: Name and semantic version of the library.
 
 Other constants and enumerations are inherited from the parent library.
 
 
 <a id="interface"></a>
 
+## Custom data types
+
+* [Handler](#handler)
+* [Handlers](#handlers)
+
+
 ## Interface
 
-- [gbj_appbucket()](#gbj_appbucket)
-- [run()](#run)
-- [isr()](#isr)
+* [gbj_appbucket()](#gbj_appbucket)
+* [run()](#run)
+* [isr()](#isr)
 
 
 ### Setters
 
-- [setDelay()](#setDelay)
-- [setRainfalls()](#setRainfalls)
+* [setDelay()](#setDelay)
+* [setRainfalls()](#setRainfalls)
 
 
 ### Getter
 
-- [isRain()](#isRain)
-- [getDelay()](#getDelay)
-- [getDuration()](#getDuration)
-- [getOffset()](#getOffset)
-- [getVolume()](#getVolume)
-- [getTips()](#getTips)
-- [getRate()](#getRate)
-- [getRateTips()](#getRateTips)
-- [getIntens()](#getIntens)
-- [getRainfalls()](#getRainfalls)
+* [isRain()](#isRain)
+* [getDelay()](#getDelay)
+* [getRainfalls()](#getRainfalls)
+* [getIntensity()](#getIntensity)
+* [getOffset()](#getOffset)
+* [getDuration()](#getDuration)
+* [getTips()](#getTips)
+* [getVolume()](#getVolume)
+* [getRate()](#getRate)
+* [getRateTips()](#getRateTips)
+
+
+<a id="handler"></a>
+
+## Handler
+
+#### Description
+The template or the signature of a callback function, which is called at particular event in the processing. It can be utilized for instant communicating with other modules of the application (project).
+* A handler is just a function with no arguments and returning nothing.
+* A handler can be declared just as `void` type in the main sketch.
+
+#### Syntax
+    typedef void Handler()
+
+#### Parameters
+None
+
+#### Returns
+None
+
+#### See also
+[Handlers](#handlers)
+
+[Back to interface](#interface)
+
+
+<a id="handlers"></a>
+
+## Handlers
+
+#### Description
+The structure of pointers to handlers each for particular event in processing.
+* Individual or all handlers do not need to be defined in the main sketch, just those that are useful.
+
+#### Syntax
+    struct Handlers
+    {
+        Handler *onRainfallStart;
+        Handler *onRainfallEnd;
+    }
+
+#### Parameters
+
+* **onRainfallStart**: Pointer to a callback function, which is call at detecting the start of a rainfall, i.e., after the first tip of a rain bucket.
+  * *Valid values*: system address range
+  * *Default value*: none
+
+
+* **onRainfallEnd**: Pointer to a callback function, which is call at detecting the end of a rainfall, i.e., after the delay period since recent tip of a rain bucket.
+  * *Data type*: Handler
+  * *Default value*: none
+
+#### Example
+```cpp
+void onRainStart()
+{
+  ...
+}
+void onRainEnd()
+{
+  ...
+}
+gbj_appbucket::Handlers handlersBucket = { .onRainfallStart = onRainStart,
+                                           .onRainfallEnd = onRainEnd };
+gbj_appbucket bucket = gbj_appbucket(handlersBucket);
+```
+
+#### See also
+[Handler](#handler)
+
+[gbj_appbucket](#gbj_appbucket)
+
+[Back to interface](#interface)
 
 
 <a id="gbj_appbucket"></a>
@@ -94,16 +187,23 @@ Other constants and enumerations are inherited from the parent library.
 ## gbj_appbucket()
 
 #### Description
-Constructor creates the class instance object and initiates internal resources.
+Constructor creates the class instance object and initiates internal resources and parameters.
 
 #### Syntax
-    gbj_appbucket()
+    gbj_appbucket(Handlers handlers)
 
 #### Parameters
-None
+* **handlers**: Pointer to a structure of callback functions. This structure as well as handlers should be defined in the main sketch.
+  * *Data type*: Handlers
+  * *Default value*: empty structure
 
 #### Returns
 Object performing rainfall tipping bucket processing.
+
+#### See also
+[Handler](#handler)
+
+[Handlers](#handlers)
 
 [Back to interface](#interface)
 
@@ -113,8 +213,17 @@ Object performing rainfall tipping bucket processing.
 ## run()
 
 #### Description
-The execution method as the implementation of the virtual method from parent class, which should be called frequently, usually in the loop function of a sketch.
-- The method detects a rainfall and calculates rain parameters.
+The execution method, which should be called frequently, usually in the loop function of a sketch.
+* The method detects a rainfall and calculates rain parameters.
+
+#### Syntax
+	void run()
+
+#### Parameters
+None
+
+#### Returns
+None
 
 [Back to interface](#interface)
 
@@ -124,8 +233,8 @@ The execution method as the implementation of the virtual method from parent cla
 ## isr()
 
 #### Description
-The execution method that should be called within _Interruption Service Routing_ in the main project sketch.
-- The method registers the very first and the recent bucket tip for rainfall processing.
+The execution method that should be called by _Interruption Service Routing_ in the main project sketch.
+* The method registers the very first and the recent bucket tip for rainfall processing.
 
 #### Syntax
     void isr()
@@ -138,7 +247,7 @@ None
 
 #### Example
 ```cpp
-gbj_appbucket bucket = gbj_appbucket();
+gbj_appbucket bucket = gbj_appbucket(...);
 IRAM_ATTR void isrBucket()
 {
   bucket.isr();
@@ -159,17 +268,17 @@ void setup()
 
 #### Description
 The method sets the _Rainfall detection period_ in minutes for determing the finish of a rainfall.
-- The rainfall finishes after that period since recent bucket tip.
-- The rain delay period is usually stored in EEPROM of a microcontroller in order to retain it after power cycles.
-- The method is useful for calling it from various IoT or cloud platforms for controlling rainfall detection.
+* The rainfall finishes after that period since recent bucket tip.
+* The rain delay period is usually stored in EEPROM of a microcontroller in order to retain it after power cycles.
+* The method is useful for calling it from various IoT or cloud platforms for controlling rainfall detection.
 
 #### Syntax
     void setDelay(byte delay)
 
 #### Parameters
-- **delay**: _Rainfall detection period_ in minutes.
-  - *Valid values*: 0 ~ 255.
-  - *Default value*: 20
+* **delay**: _Rainfall detection period_ in minutes.
+  * *Valid values*: 0 ~ 255
+  * *Default value*: 20
 
 #### Returns
 None
@@ -187,7 +296,7 @@ None
 ## getDelay()
 
 #### Description
-The method returns recently set _Rainfall detection period_.
+The method returns recently set _Rainfall detection period_ in minutes.
 
 #### Syntax
     byte getDelay()
@@ -196,7 +305,7 @@ The method returns recently set _Rainfall detection period_.
 None
 
 #### Returns
-Time period since recent bucket tip for detecting a rainfall finish.
+Time period since recent bucket tip for detecting a rainfall finish in minutes.
 
 #### See also
 [setDelay()](#setDelay)
@@ -212,8 +321,8 @@ Time period since recent bucket tip for detecting a rainfall finish.
 
 #### Description
 The method returns a flag about a pending rainfall.
-- A rainfall starts at the very first bucket tip after previous rainfall has finnished.
-- A rainfall finishes after _Rainfall detection period_ since recent bucket tip.
+* A rainfall starts at the very first bucket tip after previous rainfall has finnished.
+* A rainfall finishes after _Rainfall detection period_ since recent bucket tip.
 
 #### Syntax
     bool isRain()
@@ -235,10 +344,9 @@ Flag about current (pending) rainfall.
 ## getDuration()
 
 #### Description
-The method returns duration in seconds of the current rainfall.
-- The duration is calculated as a time period between the very first and very last bucket tip of a rainfall regardless the time, when a rainfall finish has been detected.
-- During the pending rainfall its duration is suitable for publishing to the IoT platform as telemetry.
-- After a rainfall finish the rain duration is reset to zero.
+The method returns duration of the current rainfall in seconds.
+* The duration is calculated as a time period between the very first and very last bucket tip of a rainfall regardless the time, when a rainfall finish has been detected.
+* After a rainfall finish the rain duration is reset to zero.
 
 #### Syntax
     unsigned int getDuration()
@@ -261,12 +369,11 @@ Duration of the pending rainfall in seconds. The maximal rain duration is 65,535
 
 #### Description
 The method returns time period in seconds since the recent bucket tip regardless the pending rainfall or none one.
-- If the offset is greater then Rainfall detection period, a pending rainfall is considered as finished.
-- The offset is suitable for publishing to the IoT platform as telemetry.
-- During the pending rainfall observing the offset is usefull for expecting the rainfall finish detection.
-- In time without pending rainfall the offset is the time since recent bucket tip. In this case the offset determines real time since recent rain.
-- The offset is reset to zero just at the very first bucket tip of a new rainfall.
-- Despite the offset is 32-bit value, in fact it is calculated from internal timestamp in milliseconds. So that the maximal real rain offset can be only (2^32 - 1) / 1000 seconds.
+* If the offset is greater then _Rainfall detection period_, a pending rainfall is considered as finished.
+* During the pending rainfall observing the offset is usefull for expecting the rainfall finish detection.
+* In time without pending rainfall the offset is the time since recent bucket tip. In this case the offset determines real time since recent rain.
+* The offset is reset to zero just at every bucket tip.
+* Despite the offset been 32-bit value, in fact it is calculated from internal timestamp in milliseconds. So that the maximal real rain offset can be only (2^32 - 1) / 1000 seconds, i.e., 4,294,967.295 seconds, which is 49 days, 17 hours, and 2.79 minutes, but only when no bucket tip has been detected since recent microcontroller boot. After that period since start of the microcontroller without rain the timestamp overflows and offset gets wrong number (unsigned representation of a negative number), because the offset is difference between current timestamp and timestamp of the recent tip.
 
 #### Syntax
     unsigned long getOffset()
@@ -275,7 +382,7 @@ The method returns time period in seconds since the recent bucket tip regardless
 None
 
 #### Returns
-Time in seconds since recent bucket tips. The maximal rain offset is 4,294,967.295 seconds, which is 49 days, 17 hours, and 2.79 minutes. After that period without rain the offset overflows and is reset to zero.
+Time in seconds since recent bucket tip.
 
 #### See also
 [setDelay()](#setDelay)
@@ -289,9 +396,8 @@ Time in seconds since recent bucket tips. The maximal rain offset is 4,294,967.2
 
 #### Description
 The method returns rain water volume in millimeters per square meter of the current rainfall.
-- The volume is calculated from the very first bucket tip until the recent tip.
-- During the pending rainfall its volume is suitable for publishing to the IoT platform as telemetry.
-- After a rainfall finish the rain volume is reset to zero.
+* The volume is calculated from the very first bucket tip until the recent tip.
+* After a rainfall finish the rain volume is reset to zero.
 
 #### Syntax
     float getVolume()
@@ -314,7 +420,7 @@ Rain volume of the pending rainfall in millimeters per square meter.
 
 #### Description
 The method returns number of bucket tips of the current rainfall.
-- After a rainfall finish the number of bucket tips is reset to zero.
+* After a rainfall finish the number of bucket tips is reset to zero.
 
 #### Syntax
     unsigned int getTips()
@@ -337,9 +443,9 @@ Number of bucket tips of the pending rainfall.
 
 #### Description
 The method returns rain intensity in millimeters per square meter for an hour of the current rainfall.
-- The rain rate is calculated from rain volume and rain duration, which is extrapolated or recalculated to one hour.
-- The rate is calculated from minimum of 2 bucket tips.
-- With just one bucket tip at a rainfall start the rain rate is designated with -1, which expresses unknown rate.
+* The rain rate is calculated from rain volume and rain duration, which is extrapolated or recalculated to one hour.
+* The rate is calculated from minimum of 2 bucket tips.
+* With just one bucket tip at a rainfall start the rain rate is designated with -1, which expresses unknown rate.
 
 #### Syntax
     float getRate()
@@ -366,9 +472,9 @@ Rain rate of the pending rainfall in millimeters per square meter for an hour. A
 
 #### Description
 The method returns tipping intensity in bucket tips for an hour of the current rainfall.
-- The rain tipping rate is calculated from number of rain tips and rain duration, which is extrapolated or recalculated to one hour.
-- The tipping rate is calculated from minimum of 2 bucket tips.
-- With just one bucket tip at a rainfall start the rain tipping rate is designated with -1, which expresses unknown rate.
+* The rain tipping rate is calculated from number of rain tips and rain duration, which is extrapolated or recalculated to one hour.
+* The tipping rate is calculated from minimum of 2 bucket tips.
+* With just one bucket tip at a rainfall start the rain tipping rate is designated with -1, which expresses unknown rate.
 
 #### Syntax
     float getRateTips()
@@ -394,17 +500,18 @@ Rain tiping rate of the pending rainfall in bucket tips for an hour. At the star
 ## setRainfalls()
 
 #### Description
-The method sets the initial value of an internal rainfalls counter to desired count, but usually it is used for resetting that counter by calling it without parameters.
-- The rainfalls count is usually stored in EEPROM of a microcontroller in order to retain it after power cycles.
-- The method is useful for calling it from various IoT or cloud platforms for initiating the rainfalls counter.
+The method sets the initial value of an internal rainfalls counter to desired count.
+* It is used for resetting the counter by calling it without parameters.
+* The rainfalls count is usually stored in EEPROM of a microcontroller in order to retain it after power cycles.
+* The method is useful for calling it from various IoT or cloud platforms for initiating the rainfalls counter.
 
 #### Syntax
-    void setRainfalls(unsigned int rainfalls)
+    void setRainfalls(unsigned byte rainfalls)
 
 #### Parameters
-- **rainfalls**: Number of rainfalls.
-  - *Valid values*: 0 ~ 65,535.
-  - *Default value*: 0
+* **rainfalls**: Number of rainfalls.
+  * *Valid values*: 0 ~ 255
+  * *Default value*: 0
 
 #### Returns
 None
@@ -423,7 +530,7 @@ None
 The method returns current number of rainfalls since resetting the rainfalls counter.
 
 #### Syntax
-    unsigned int getRainfalls()
+    unsigned byte getRainfalls()
 
 #### Parameters
 None
@@ -437,18 +544,18 @@ Number of rainfalls.
 [Back to interface](#interface)
 
 
-<a id="getIntens"></a>
+<a id="getIntensity"></a>
 
-## getIntens()
+## getIntensity()
 
 #### Description
 The method calculates the [level of rain intensity](#intensity) for rain rate and determines it for various rain duration.
-- During a rainfall the level ranked from the rain rate depending on rain duration.
-- Between rainfalls the method return the level for no rain status.
-- Rainfalls intensity levels can be tranformed to descriptive names or rain type names for visualization purposes.
+* During a rainfall the level ranked from the rain rate depending on rain duration.
+* Between rainfalls the method return the level for no rain status.
+* Rainfalls intensity levels can be tranformed to descriptive names or rain type names for visualization purposes.
 
 #### Syntax
-    byte getIntens()
+    byte getIntensity()
 
 #### Parameters
 None

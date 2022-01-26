@@ -5,11 +5,13 @@
 #######################################
 # Datatypes (KEYWORD1)
 #######################################
-gbj_appbucket	KEYWORD1
+Handler	KEYWORD1
+Handlers	KEYWORD1
 
 #######################################
 # Methods and Functions (KEYWORD2)
 #######################################
+gbj_appbucket	KEYWORD2
 run	KEYWORD2
 isr	KEYWORD2
 isRain	KEYWORD2
