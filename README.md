@@ -77,26 +77,19 @@ Other constants and enumerations are inherited from the parent library.
 <a id="interface"></a>
 
 ## Custom data types
-
 * [Handler](#handler)
 * [Handlers](#handlers)
 
-
 ## Interface
-
 * [gbj_appbucket()](#gbj_appbucket)
 * [run()](#run)
 * [isr()](#isr)
 
-
 ### Setters
-
 * [setDelay()](#setDelay)
 * [setRainfalls()](#setRainfalls)
 
-
-### Getter
-
+### Getters
 * [isRain()](#isRain)
 * [getDelay()](#getDelay)
 * [getRainfalls()](#getRainfalls)
