@@ -13,9 +13,8 @@ This is an application library, which is used usually as a project library for p
 
 ## Fundamental functionality
 
-* The functionality is represented within this library by a class method called by an `Interuption Service Routine` usually in the main sketch at each tip of a GPIO pin of a microcontroller sensing a bucket's reed switch.
+* The functionality is represented within this library by a class method called by an `Interuption Service Routine` (referred to as "ISR") usually in the main sketch at each tip of a GPIO pin of a microcontroller sensing a bucket's reed switch.
 * The library processes the bucket tips for detecting and evaluating a rainfall.
-* Tips are sensed by impulses of a bucket's reed switch, which are caught by an `Interuption Service Routine` (referred to as "ISR") usually in the main sketch. At each interrupstion the ISR calls corresponding method of the library for further processing.
 * A rainfall starts at the very first bucket tip after eventual previous rainfall, since recent boot of a microcontroller.
 * A rainfall finishes at the end of the particular time period since recent bucket tip, which is internally defaulted to 20 minutes. This time period can be changed externally by calling corresponding setter, e.g., from an IoT platform or mobile application.
 * Rain parameters are evaluated for a time period from the first bucket tip to the last one in a rainfall.
@@ -54,6 +53,10 @@ The rain intensity level is determined by ranking the rain rate in millimeters p
 
 * **gbj\_appcore**: Parent library loaded from the file `gbj_appcore.h`.
 * **gbj\_serial\_debug**: Auxilliary library for debug serial output loaded from the file `gbj_serial_debug.h`. It enables to exclude serial outputs from final (production) compilation.
+
+#### Arduino platform
+* **Arduino.h**: Main include file for the Arduino SDK.
+* **inttypes.h**: Integer type conversions. This header file includes the exact-width integer definitions and extends them with additional facilities provided by the implementation.
 
 #### Espressif ESP8266 platform
 * **Arduino.h**: Main include file for the Arduino platform.
