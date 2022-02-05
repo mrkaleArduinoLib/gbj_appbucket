@@ -12,12 +12,20 @@ This is an application library, which is used usually as a project library for p
 
 
 ## Fundamental functionality
-
 * The functionality is represented within this library by a class method called by an `Interuption Service Routine` (referred to as "ISR") usually in the main sketch at each tip of a GPIO pin of a microcontroller sensing a bucket's reed switch.
 * The library processes the bucket tips for detecting and evaluating a rainfall.
 * A rainfall starts at the very first bucket tip after eventual previous rainfall, since recent boot of a microcontroller.
 * A rainfall finishes at the end of the particular time period since recent bucket tip, which is internally defaulted to 20 minutes. This time period can be changed externally by calling corresponding setter, e.g., from an IoT platform or mobile application.
 * Rain parameters are evaluated for a time period from the first bucket tip to the last one in a rainfall.
+
+
+<a id="internals"></a>
+
+## Internal parameters
+Internal parameters are hard-coded in the library usually as enumerations and have neither setters nor getters associated. Some of them serve as default values.
+
+* **Rainfall detection period** (20 min.): It is a default period determing the finish of a rainfall.
+* **Time period for debouncing** (50 ms): This parameter determines time period within which subsequent tips are ignored.
 
 
 <a id="intensity"></a>
@@ -50,7 +58,6 @@ The rain intensity level is determined by ranking the rain rate in millimeters p
 <a id="dependency"></a>
 
 ## Dependency
-
 * **gbj\_appcore**: Parent library loaded from the file `gbj_appcore.h`.
 * **gbj\_serial\_debug**: Auxilliary library for debug serial output loaded from the file `gbj_serial_debug.h`. It enables to exclude serial outputs from final (production) compilation.
 
@@ -71,10 +78,9 @@ The rain intensity level is determined by ranking the rain rate in millimeters p
 <a id="constants"></a>
 
 ## Constants
+* **VERSION**: Name and semantic version of the library.
 
-* **gbj\_appbucket::VERSION**: Name and semantic version of the library.
-
-Other constants and enumerations are inherited from the parent library.
+Other constants, enumerations, result codes, and error codes are inherited from the parent library.
 
 
 <a id="interface"></a>
@@ -134,26 +140,20 @@ None
 ## Handlers
 
 #### Description
-The structure of pointers to handlers each for particular event in processing.
+Structure of pointers to handlers each for particular event in processing.
 * Individual or all handlers do not need to be defined in the main sketch, just those that are useful.
 
 #### Syntax
     struct Handlers
     {
-        Handler *onRainfallStart;
-        Handler *onRainfallEnd;
+      Handler *onRainfallStart;
+      Handler *onRainfallEnd;
     }
 
 #### Parameters
 
 * **onRainfallStart**: Pointer to a callback function, which is call at detecting the start of a rainfall, i.e., after the first tip of a rain bucket.
-  * *Valid values*: system address range
-  * *Default value*: none
-
-
 * **onRainfallEnd**: Pointer to a callback function, which is call at detecting the end of a rainfall, i.e., after the delay period since recent tip of a rain bucket.
-  * *Data type*: Handler
-  * *Default value*: none
 
 #### Example
 ```cpp
@@ -369,7 +369,7 @@ The method returns time period in seconds since the recent bucket tip regardless
 * During the pending rainfall observing the offset is usefull for expecting the rainfall finish detection.
 * In time without pending rainfall the offset is the time since recent bucket tip. In this case the offset determines real time since recent rain.
 * The offset is reset to zero just at every bucket tip.
-* Despite the offset been 32-bit value, in fact it is calculated from internal timestamp in milliseconds. So that the maximal real rain offset can be only (2^32 - 1) / 1000 seconds, i.e., 4,294,967.295 seconds, which is 49 days, 17 hours, and 2.79 minutes, but only when no bucket tip has been detected since recent microcontroller boot. After that period since start of the microcontroller without rain the timestamp overflows and offset gets wrong number (unsigned representation of a negative number), because the offset is difference between current timestamp and timestamp of the recent tip.
+* Despite the offset being 32-bit value, in fact it is calculated from internal timestamp in milliseconds. So that the maximal real rain offset can be only (2^32 - 1) / 1000 seconds, i.e., 4,294,967.295 seconds, which is 49 days, 17 hours, and 2.79 minutes, but only when no bucket tip has been detected since recent microcontroller boot. After that period since start of the microcontroller without rain the timestamp overflows and offset gets wrong number (unsigned representation of a negative number), because the offset is difference between current timestamp and timestamp of the recent tip.
 
 #### Syntax
     unsigned long getOffset()
