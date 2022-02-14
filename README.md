@@ -24,8 +24,8 @@ This is an application library, which is used usually as a project library for p
 ## Internal parameters
 Internal parameters are hard-coded in the library usually as enumerations and have neither setters nor getters associated. Some of them serve as default values.
 
-* **Rainfall detection period** (20 min.): It is a default period determing the finish of a rainfall.
-* **Time period for debouncing** (50 ms): This parameter determines time period within which subsequent tips are ignored.
+* **Rainfall detection period** (`20 minutes`): It is a default period determing the finish of a rainfall.
+* **Time period for debouncing** (`50 milliseconds`): This parameter determines time period within which subsequent tips are ignored.
 
 
 <a id="intensity"></a>
@@ -152,8 +152,8 @@ Structure of pointers to handlers each for particular event in processing.
 
 #### Parameters
 
-* **onRainfallStart**: Pointer to a callback function, which is call at detecting the start of a rainfall, i.e., after the first tip of a rain bucket.
-* **onRainfallEnd**: Pointer to a callback function, which is call at detecting the end of a rainfall, i.e., after the delay period since recent tip of a rain bucket.
+* **onRainfallStart**: Pointer to a callback function, which is call at detecting the start of a rainfall, i.e., after the first tip of a rain bucket. There is only parameter about number of rainfalls available for the handler by corresponding [getter](#getRainfalls).
+* **onRainfallEnd**: Pointer to a callback function, which is call at detecting the end of a rainfall, i.e., after the delay period since recent tip of a rain bucket. There are all parameters or recent rainfall available for the handler by corresponding getters, right before their reset.
 
 #### Example
 ```cpp
@@ -368,8 +368,9 @@ The method returns time period in seconds since the recent bucket tip regardless
 * If the offset is greater then _Rainfall detection period_, a pending rainfall is considered as finished.
 * During the pending rainfall observing the offset is usefull for expecting the rainfall finish detection.
 * In time without pending rainfall the offset is the time since recent bucket tip. In this case the offset determines real time since recent rain.
+* Right after the microcontroller start (boot, restart) the rain offset means up-time of the microcontroller until the first bucket tip.
 * The offset is reset to zero just at every bucket tip.
-* Despite the offset being 32-bit value, in fact it is calculated from internal timestamp in milliseconds. So that the maximal real rain offset can be only (2^32 - 1) / 1000 seconds, i.e., 4,294,967.295 seconds, which is 49 days, 17 hours, and 2.79 minutes, but only when no bucket tip has been detected since recent microcontroller boot. After that period since start of the microcontroller without rain the timestamp overflows and offset gets wrong number (unsigned representation of a negative number), because the offset is difference between current timestamp and timestamp of the recent tip.
+* Despite the offset being 32-bit value, in fact it is calculated from internal timestamp in milliseconds. So that the maximal real rain offset or microcontroller up-time can be only _(2^32 - 1) / 1000 seconds, i.e., 4,294,967.295 seconds, which is 49 days, 17 hours, and 2.79 minutes_. After that period the timestamp overflows and offset gets wrong number (unsigned representation of a negative number), because the offset is difference between current timestamp and timestamp of the recent tip.
 
 #### Syntax
     unsigned long getOffset()
@@ -378,7 +379,7 @@ The method returns time period in seconds since the recent bucket tip regardless
 None
 
 #### Returns
-Time in seconds since recent bucket tip.
+Time in seconds since recent bucket tip or microcontroller start.
 
 #### See also
 [setDelay()](#setDelay)

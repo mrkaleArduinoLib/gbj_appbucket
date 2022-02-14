@@ -133,7 +133,7 @@ public:
   inline float getRateTips() { return rainRateTips_; }
 
 private:
-  enum Timing : unsigned int
+  enum Timing : byte
   {
     PERIOD_DEBOUNCE = 50, // Debouncing delay in milliseconds
     PERIOD_RAINFALL_END = 20, // Delay between rainfalls in minutes

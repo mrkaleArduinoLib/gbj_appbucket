@@ -1,5 +1,5 @@
 #include "gbj_appbucket.h"
-const String gbj_appbucket::VERSION = "GBJ_APPBUCKET 1.0.0";
+const String gbj_appbucket::VERSION = "GBJ_APPBUCKET 1.1.0";
 
 void gbj_appbucket::rainProcessTips()
 {
@@ -8,6 +8,7 @@ void gbj_appbucket::rainProcessTips()
   rainTips_ += tips;
   if (!isRain_)
   {
+    isRain_ = true;
     rainfalls_++;
     SERIAL_VALUE("Rainfall", "START")
     SERIAL_VALUE("rainfalls", rainfalls_)
@@ -16,7 +17,6 @@ void gbj_appbucket::rainProcessTips()
       handlers_.onRainfallStart();
     }
   }
-  isRain_ = true;
   rainVolume_ = float(rainTips_ * BUCKET_FACTOR);
   rainDuration_ = (rainStop_ - rainStart_) / 1000;
   rainRateTips_ = -1;
@@ -41,15 +41,16 @@ void gbj_appbucket::rainDetectEnd()
   rainOffset_ = (millis() - rainStop_) / 1000;
   if (isRain_ && rainOffset_ > rainDelay_)
   {
-    isRain_ = false;
-    rainLevel_ = RainIntensity::RAIN_NONE;
-    rainStart_ = rainStop_ = rainTips_ = rainVolume_ = rainDuration_ =
-      rainRateTips_ = rainRate_ = 0;
     SERIAL_VALUE("Rainfall", "STOP")
+    isRain_ = false;
     if (handlers_.onRainfallEnd)
     {
       handlers_.onRainfallEnd();
     }
+    // Init
+    rainLevel_ = RainIntensity::RAIN_NONE;
+    rainStart_ = rainTips_ = rainVolume_ = rainDuration_ = rainRateTips_ =
+      rainRate_ = 0;
   }
 }
 
