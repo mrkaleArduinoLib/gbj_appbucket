@@ -135,7 +135,7 @@ public:
 private:
   enum Timing : byte
   {
-    PERIOD_DEBOUNCE = 50, // Debouncing delay in milliseconds
+    PERIOD_DEBOUNCE = 250, // Debouncing delay in milliseconds
     PERIOD_RAINFALL_END = 20, // Delay between rainfalls in minutes
   };
   enum RainIntensity : byte

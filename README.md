@@ -13,9 +13,9 @@ This is an application library, which is used usually as a project library for p
 
 ## Fundamental functionality
 * The functionality is represented within this library by a class method called by an `Interuption Service Routine` (referred to as "ISR") usually in the main sketch at each tip of a GPIO pin of a microcontroller sensing a bucket's reed switch.
-* The library processes the bucket tips for detecting and evaluating a rainfall.
+* The library processes (counts) bucket tips for detecting and evaluating a rainfall.
 * A rainfall starts at the very first bucket tip after eventual previous rainfall, since recent boot of a microcontroller.
-* A rainfall finishes at the end of the particular time period since recent bucket tip, which is internally defaulted to 20 minutes. This time period can be changed externally by calling corresponding setter, e.g., from an IoT platform or mobile application.
+* A rainfall finishes at the end of the particular time period since recent bucket tip, which is considered as `Rainfall detection period`. This time period can be changed externally by corresponding [setter](#setDelay), e.g., from an IoT platform or mobile application.
 * Rain parameters are evaluated for a time period from the first bucket tip to the last one in a rainfall.
 
 
@@ -24,8 +24,10 @@ This is an application library, which is used usually as a project library for p
 ## Internal parameters
 Internal parameters are hard-coded in the library usually as enumerations and have neither setters nor getters associated. Some of them serve as default values.
 
+* **Bucket factor** (`0.2794 mm/m2`): The measurement feature of the rainfall tipping bucket, which determines the extrapolation of rain volume measured in millimeters of the water amount dropped upon one square meter of ground.
 * **Rainfall detection period** (`20 minutes`): It is a default period determing the finish of a rainfall.
-* **Time period for debouncing** (`50 milliseconds`): This parameter determines time period within which subsequent tips are ignored.
+* **Time period for debouncing** (`250 milliseconds`): This parameter determines time period within which subsequent tips are ignored. It should overcome (ignore) the bucket's reed switch contacts bouncing.
+The highest rain rate is expected 72 mm/m2/hr, which is 257.7 bucket tips per hour, and mean time between tips is cca. 14 seconds. It is the maximal reasonable debouncing period. The default debouncing period should be reached at rain rate of 4023 mm/m2/hr, i.e., 14400 tips per hour, which is unreal.
 
 
 <a id="intensity"></a>
@@ -40,7 +42,7 @@ The rain intensity level is determined by ranking the rain rate in millimeters p
     * 1 rain level is dedicated for no rain situation, i.e., between rainfalls.
 
 
-* In the following table the numerical values are thresholds for determining particular level in millimeters pre squar meter for an hour. The threshold is the lowest (starting) value for a level as depicted in the following table.
+* In the following table the numerical values are thresholds for determining particular level in millimeters per square meter for an hour. The threshold is the lowest (starting) value for a level as depicted in the following table.
 
 |Level|1st hr.|2nd hr.|3rd+ hr.|Rain|
 |:---:|:---:|:---:|:---:|:---|
