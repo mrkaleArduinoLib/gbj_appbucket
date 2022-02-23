@@ -4,7 +4,7 @@
 This is an application library, which is used usually as a project library for particular PlatformIO project. It encapsulates the functionality of a `Rainfall Tipping Bucket`. The encapsulation provides following advantages:
 
 * Functionality is hidden from the main sketch.
-* The library follows the principle `separation of concern`.
+* The library follows the principle `separation of concerns`.
 * The library is reusable for various projects without need to code the bucket management.
 * Update in library is valid for all involved projects.
 * It specifies (inherits from) the parent application library `gbj_appcore`.

@@ -1,5 +1,4 @@
 #include "gbj_appbucket.h"
-const String gbj_appbucket::VERSION = "GBJ_APPBUCKET 1.1.0";
 
 void gbj_appbucket::rainProcessTips()
 {
