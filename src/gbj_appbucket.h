@@ -37,7 +37,7 @@
 class gbj_appbucket : gbj_appcore
 {
 public:
-  const String VERSION = "GBJ_APPBUCKET 1.1.0";
+  const char *VERSION = "GBJ_APPBUCKET 1.1.0";
 
   typedef void Handler();
 
