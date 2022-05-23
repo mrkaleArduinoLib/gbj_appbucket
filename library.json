@@ -1,12 +1,13 @@
 {
   "name": "gbj_appbucket",
-  "keywords": "application",
+  "version": "1.1.0",
   "description": "Library processes rainfall tipping bucket as a sensor.",
+  "keywords": "application",
   "repository": {
     "type": "git",
     "url": "https://github.com/mrkaleArduinoLib/gbj_appbucket.git"
   },
-  "version": "1.1.0",
+  "license": "MIT",
   "frameworks": "arduino",
   "platforms": [
     "espressif8266",
