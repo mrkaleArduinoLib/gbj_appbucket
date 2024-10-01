@@ -18,35 +18,29 @@
 #ifndef GBJ_APPBUCKET_H
 #define GBJ_APPBUCKET_H
 
+#include <Arduino.h>
 #if defined(__AVR__)
-  #include <Arduino.h>
   #include <inttypes.h>
-#elif defined(ESP8266)
-  #include <Arduino.h>
-#elif defined(ESP32)
-  #include <Arduino.h>
-#elif defined(PARTICLE)
-  #include <Particle.h>
 #endif
 #include "gbj_appcore.h"
 #include "gbj_serial_debug.h"
 
 #undef SERIAL_PREFIX
 #define SERIAL_PREFIX "gbj_appbucket"
-
+//******************************************************************************
+// Class definition
+//******************************************************************************
 class gbj_appbucket : gbj_appcore
 {
 public:
-  const char *VERSION = "GBJ_APPBUCKET 1.1.0";
-
   typedef void Handler();
 
   struct Handlers
   {
     Handler *onRainfallStart;
-    Handler *onRainfallEnd;
+    Handler *onRainfallStop;
+    Handler *onEvaluate;
   };
-
   /*
     Constructor
 
@@ -55,45 +49,32 @@ public:
     parameters.
 
     PARAMETERS:
+    rainfallOffset - Time in minutes from recent tip to determine end of a
+    rainfall.
+       - Data type: constant string
+       - Default value: none
+       - Limited range: none
     handlers - A structure with pointers to various callback handler functions.
       - Data type: Handlers
       - Default value: structure with zeroed all handlers
       - Limited range: system address range
 
+
     RETURN: object
   */
-  inline gbj_appbucket(Handlers handlers = Handlers())
+  inline gbj_appbucket(word rainfallOffset, Handlers handlers = Handlers())
   {
+    rain_.offset = rainfallOffset;
     handlers_ = handlers;
-    setDelay();
-  }
-
-  /*
-    Processing.
-
-    DESCRIPTION:
-    The method should be called in an application sketch loop.
-    It processes main functionality and is control by the internal timer.
-
-    PARAMETERS: None
-
-    RETURN: none
-  */
-  inline void run()
-  {
-    // Measure at new tips
-    if (tips_)
-    {
-      rainProcessTips();
-    }
-    rainDetectEnd();
   }
 
   /*
     Interruption Service Routing.
 
     DESCRIPTION:
-    The method should be called in a main sketch ISR attached to the bucket pin.
+    The method collects random tips from a rain tip bucket.
+    - The method should be called in a main sketch ISR attached to the bucket
+    pin.
 
     PARAMETERS: None
 
@@ -101,81 +82,153 @@ public:
   */
   inline void isr()
   {
-    if (millis() - rainStop_ < Timing::PERIOD_DEBOUNCE)
+    if (millis() - isr_.tsStop < Timing::PERIOD_DEBOUNCE)
     {
       return;
     }
-    tips_++;
-    rainStop_ = millis();
-    if (rainStart_ == 0)
+    SERIAL_TITLE("ISR")
+    isr_.tips++;
+    isr_.tsStop = millis();
+    if (isr_.tsStart == 0)
     {
-      rainStart_ = rainStop_;
+      isr_.tsStart = isr_.tsStop;
     }
   }
 
-  // Setters
-  inline void setDelay(byte rainDelay = Timing::PERIOD_RAINFALL_END)
+  /*
+    Processing.
+
+    DESCRIPTION:
+    The method should be called frequently either in an application sketch loop
+    or in a timer handler.
+
+    PARAMETERS: None
+
+    RETURN: None
+  */
+  inline void run()
   {
-    rainDelay_ = rainDelay * 60;
+    if (isr_.tips > 0)
+    {
+      rainEvaluate();
+    }
+    rainfallEnd();
   }
-  inline void setRainfalls(byte rainfalls = 0) { rainfalls_ = rainfalls; }
 
   // Getters
-  inline bool isRain() { return isRain_; }
-  inline byte getDelay() { return rainDelay_ / 60; }
-  inline byte getRainfalls() { return rainfalls_; };
-  inline byte getIntensity() { return (byte)rainLevel_; };
-  inline unsigned long getOffset() { return rainOffset_; }
-  inline unsigned int getDuration() { return rainDuration_; }
-  inline unsigned int getTips() { return rainTips_; }
-  inline float getVolume() { return rainVolume_; }
-  inline float getRate() { return rainRate_; }
-  inline float getRateTips() { return rainRateTips_; }
+  inline bool isRain() { return rain_.flPending; }
+  inline word getRainDuration() { return rain_.duration; }
+  inline float getRainVolume() { return rain_.volume; }
+  inline float getRainRate() { return rain_.rate; }
 
 private:
-  enum Timing : byte
+  enum Timing : word
   {
-    PERIOD_DEBOUNCE = 250, // Debouncing delay in milliseconds
-    PERIOD_RAINFALL_END = 20, // Delay between rainfalls in minutes
+    // Debouncing delay in milliseconds
+    PERIOD_DEBOUNCE = 1000,
   };
-  enum RainIntensity : byte
+  struct Isr
   {
-    RAIN_NONE,
-    RAIN_LIGHT,
-    RAIN_SHOWER,
-    RAIN_MODERATE,
-    RAIN_STRONG,
-    RAIN_HEAVY,
-    RAIN_INTENSE,
-    RAIN_TORRENTIAL,
-    RAIN_UNKNOWN,
-  };
+    volatile word tips;
+    volatile unsigned long tsStart;
+    volatile unsigned long tsStop;
+    void reset() { tips = tsStart = tsStop = 0; }
+  } isr_;
+  struct Rain
+  {
+    // Number of collected bucket tips
+    word tips;
+    // Delay in minutes from recent tip determining rainfall end
+    word offset;
+    // Overall rain time in seconds
+    unsigned long duration;
+    // Millimeters
+    float volume;
+    // Rain intensity in millimeters per hour
+    float rate;
+    // Flag about pending rainfall
+    bool flPending;
+    void reset() { tips = duration = volume = rate = 0; }
+  } rain_;
+  // Rain millimeters per bucket tick
+  const float BUCKET_FACTOR = 0.2794;
   Handlers handlers_;
-  const float BUCKET_FACTOR = 0.2794; // Rain millimeters per bucket tick
-  volatile unsigned int tips_; // Tips since recent main processing
-  volatile unsigned long rainStart_; // Timestamp of the first tip in a rain
-  volatile unsigned long rainStop_; // Timestamp of the last tip in a rain
-  unsigned long rainOffset_; // Time in seconds from recent tip
-  unsigned int rainDuration_; // Time in seconds between first and last tip
-  unsigned int rainTips_; // Tips in a rain
-  unsigned int rainDelay_; // Delay between rainfalls in seconds (EEPROM)
-  byte rainfalls_; // Number of rains detected (EEPROM)
-  float rainVolume_; // Rain millimeters in a rain
-  float rainRateTips_; // Rain speed in tips per hour
-  float rainRate_; // Rain speed in millimeters per hour
-  bool isRain_; // Flag about pending rainfall
-  RainIntensity rainLevel_; // Level of a rain intensity
+  /*
+    Rain evaluation.
 
-  // Rain rate level thresholds for particular hour of rain duration
-  const float rainThreshold_[3][7] = {
-    { 58, 23, 15, 10, 5, 1, 0 }, // 1st hour
-    { 64, 30.5, 21, 14, 7.5, 1.5, 0 }, // 2-nd hour
-    { 72, 33, 23.5, 11.5, 9, 2, 0 }, // 3rd or higher hour
-  };
+    DESCRIPTION:
+    The method evaluates the rain tips collected so far.
 
-  void rainProcessTips(); // Process bucket tips
-  void rainDetectEnd(); // Detect end of current rainfall
-  void rainLevel(); // Calculate the rain level
+    PARAMETERS: None
+
+    RETURN: none
+  */
+  void rainEvaluate()
+  {
+    // Allow concurrent interruptions
+    word tips = isr_.tips;
+    // Leave new tips in meanwhile intact
+    isr_.tips -= tips;
+    // Determine rain
+    if (!rain_.flPending)
+    {
+      rain_.flPending = true;
+      SERIAL_VALUE("Rainfall", "START")
+      if (handlers_.onRainfallStart != nullptr)
+      {
+        handlers_.onRainfallStart();
+      }
+    }
+    // Evaluate
+    rain_.tips += tips;
+    unsigned long duration = isr_.tsStop - isr_.tsStart;
+    // Convert from milliseconds to seconds and round
+    duration += 500;
+    duration /= 1000;
+    // Evaluate
+    rain_.volume = float(rain_.tips * BUCKET_FACTOR);
+    rain_.duration = duration;
+    rain_.rate = 0;
+    if (rain_.duration > 0)
+    {
+      float tipRate = float(rain_.tips - 1) / float(rain_.duration);
+      rain_.rate = tipRate * BUCKET_FACTOR * 3600;
+    }
+    SERIAL_VALUE("buketTips", rain_.tips)
+    SERIAL_VALUE("rainVolume", String(rain_.volume, 4))
+    SERIAL_VALUE("rainDuration", rain_.duration)
+    SERIAL_VALUE("rainRate", rain_.rate)
+    if (handlers_.onEvaluate != nullptr)
+    {
+      handlers_.onEvaluate();
+    }
+  }
+  /*
+    Rain end detection.
+
+    DESCRIPTION:
+    The method detects a rainfall end by elapsed predefined minutes after recent
+    bucket tip.
+
+    PARAMETERS: None
+
+    RETURN: none
+  */
+  void rainfallEnd()
+  {
+    word offset = (millis() - isr_.tsStop) / 60000;
+    if (rain_.flPending && (offset >= rain_.offset))
+    {
+      SERIAL_VALUE("Rainfall", "STOP")
+      rain_.flPending = false;
+      if (handlers_.onRainfallStop != nullptr)
+      {
+        handlers_.onRainfallStop();
+      }
+      isr_.reset();
+      rain_.reset();
+    }
+  }
 };
 
 #endif
