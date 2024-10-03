@@ -120,6 +120,8 @@ public:
   inline word getRainDuration() { return rain_.duration; }
   inline float getRainVolume() { return rain_.volume; }
   inline float getRainRate() { return rain_.rate; }
+  inline unsigned long getRainStart() { return isr_.tsStart; }
+  inline unsigned long getRainStop() { return isr_.tsStop; }
 
 private:
   enum Timing : word
