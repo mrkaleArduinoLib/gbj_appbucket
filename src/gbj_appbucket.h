@@ -22,7 +22,9 @@
 #if defined(__AVR__)
   #include <inttypes.h>
 #endif
+#include "config_params_stats.h"
 #include "gbj_appcore.h"
+#include "gbj_appstatistics.h"
 #include "gbj_serial_debug.h"
 
 #undef SERIAL_PREFIX
@@ -30,10 +32,13 @@
 //******************************************************************************
 // Class definition
 //******************************************************************************
-class gbj_appbucket : gbj_appcore
+class gbj_appbucket
+  : gbj_appcore
+  , gbj_appstatistics
 {
 public:
   typedef void Handler();
+  StatisticTime statTime = StatisticTime(lblStatsIntervalTime);
 
   struct Handlers
   {
@@ -82,17 +87,13 @@ public:
   */
   inline void isr()
   {
-    if (millis() - isr_.tsStop < Timing::PERIOD_DEBOUNCE)
+    if (millis() - statTime.getStop() < Timing::PERIOD_DEBOUNCE)
     {
       return;
     }
+    rain_.flTips = true;
+    statTime.set(millis());
     SERIAL_TITLE("ISR")
-    isr_.tips++;
-    isr_.tsStop = millis();
-    if (isr_.tsStart == 0)
-    {
-      isr_.tsStart = isr_.tsStop;
-    }
   }
 
   /*
@@ -108,9 +109,10 @@ public:
   */
   inline void run()
   {
-    if (isr_.tips > 0)
+    if (rain_.flTips)
     {
       rainEvaluate();
+      rain_.flTips = false;
     }
     rainfallEnd();
   }
@@ -120,8 +122,12 @@ public:
   inline word getRainDuration() { return rain_.duration; }
   inline float getRainVolume() { return rain_.volume; }
   inline float getRainRate() { return rain_.rate; }
-  inline unsigned long getRainStart() { return isr_.tsStart; }
-  inline unsigned long getRainStop() { return isr_.tsStop; }
+  inline unsigned long getRainStart() { return statTime.getStart(); }
+  inline unsigned long getRainStop() { return statTime.getStop(); }
+  inline unsigned long getTips() { return statTime.getCnt(); }
+  inline unsigned long getTipsGapMin() { return statTime.getMin(); }
+  inline unsigned long getTipsGapMax() { return statTime.getMax(); }
+  inline unsigned long getTipsGapAvg() { return statTime.getAvg(); }
 
 private:
   enum Timing : word
@@ -129,17 +135,8 @@ private:
     // Debouncing delay in milliseconds
     PERIOD_DEBOUNCE = 1000,
   };
-  struct Isr
-  {
-    volatile word tips;
-    volatile unsigned long tsStart;
-    volatile unsigned long tsStop;
-    void reset() { tips = tsStart = tsStop = 0; }
-  } isr_;
   struct Rain
   {
-    // Number of collected bucket tips
-    word tips;
     // Delay in minutes from recent tip determining rainfall end
     word offset;
     // Overall rain time in seconds
@@ -150,7 +147,9 @@ private:
     float rate;
     // Flag about pending rainfall
     bool flPending;
-    void reset() { tips = duration = volume = rate = 0; }
+    // Flag about new tips
+    bool flTips;
+    void reset() { duration = volume = rate = 0; }
   } rain_;
   // Rain millimeters per bucket tick
   const float BUCKET_FACTOR = 0.2794;
@@ -167,39 +166,37 @@ private:
   */
   void rainEvaluate()
   {
-    // Allow concurrent interruptions
-    word tips = isr_.tips;
-    // Leave new tips in meanwhile intact
-    isr_.tips -= tips;
     // Determine rain
     if (!rain_.flPending)
     {
-      rain_.flPending = true;
       SERIAL_VALUE("Rainfall", "START")
+      rain_.flPending = true;
       if (handlers_.onRainfallStart != nullptr)
       {
         handlers_.onRainfallStart();
       }
     }
     // Evaluate
-    rain_.tips += tips;
-    unsigned long duration = isr_.tsStop - isr_.tsStart;
+    unsigned long duration = statTime.get();
     // Convert from milliseconds to seconds and round
     duration += 500;
     duration /= 1000;
     // Evaluate
-    rain_.volume = float(rain_.tips * BUCKET_FACTOR);
+    rain_.volume = float(statTime.getCnt() * BUCKET_FACTOR);
     rain_.duration = duration;
     rain_.rate = 0;
     if (rain_.duration > 0)
     {
-      float tipRate = float(rain_.tips - 1) / float(rain_.duration);
+      float tipRate = float(statTime.getCnt() - 1) / float(rain_.duration);
       rain_.rate = tipRate * BUCKET_FACTOR * 3600;
     }
-    SERIAL_VALUE("buketTips", rain_.tips)
-    SERIAL_VALUE("rainVolume", String(rain_.volume, 4))
-    SERIAL_VALUE("rainDuration", rain_.duration)
-    SERIAL_VALUE("rainRate", rain_.rate)
+    SERIAL_VALUE("rainVolume", String(getRainVolume(), 4))
+    SERIAL_VALUE("rainDuration", getRainDuration())
+    SERIAL_VALUE("rainRate", getRainRate())
+    SERIAL_VALUE("tipCnt", getTips())
+    SERIAL_VALUE("tipGabMin", getTipsGapMin())
+    SERIAL_VALUE("tipGabMax", getTipsGapMax())
+    SERIAL_VALUE("tipGabAvg", getTipsGapAvg())
     if (handlers_.onEvaluate != nullptr)
     {
       handlers_.onEvaluate();
@@ -218,7 +215,7 @@ private:
   */
   void rainfallEnd()
   {
-    word offset = (millis() - isr_.tsStop) / 60000;
+    word offset = (millis() - statTime.getStop()) / 60000;
     if (rain_.flPending && (offset >= rain_.offset))
     {
       SERIAL_VALUE("Rainfall", "STOP")
@@ -227,7 +224,7 @@ private:
       {
         handlers_.onRainfallStop();
       }
-      isr_.reset();
+      statTime.reset();
       rain_.reset();
     }
   }
