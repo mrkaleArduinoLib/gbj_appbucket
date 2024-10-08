@@ -56,7 +56,7 @@ public:
     PARAMETERS:
     rainfallOffset - Time in minutes from recent tip to determine end of a
     rainfall.
-       - Data type: constant string
+       - Data type: unsigned integer
        - Default value: none
        - Limited range: none
     handlers - A structure with pointers to various callback handler functions.
@@ -133,7 +133,7 @@ private:
   enum Timing : word
   {
     // Debouncing delay in milliseconds
-    PERIOD_DEBOUNCE = 1000,
+    PERIOD_DEBOUNCE = 500,
   };
   struct Rain
   {
@@ -187,8 +187,7 @@ private:
     rain_.rate = 0;
     if (rain_.duration > 0)
     {
-      float tipRate = float(statTime.getCnt() - 1) / float(rain_.duration);
-      rain_.rate = tipRate * BUCKET_FACTOR * 3600;
+      rain_.rate = rain_.volume * 3600 / float(rain_.duration);
     }
     SERIAL_VALUE("rainVolume", String(getRainVolume(), 4))
     SERIAL_VALUE("rainDuration", getRainDuration())
