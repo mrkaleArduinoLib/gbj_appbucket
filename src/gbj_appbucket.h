@@ -44,7 +44,7 @@ public:
   {
     Handler *onRainfallStart;
     Handler *onRainfallStop;
-    Handler *onEvaluate;
+    Handler *onRainfallRun;
   };
   /*
     Constructor
@@ -87,7 +87,7 @@ public:
   */
   inline void isr()
   {
-    if (millis() - statTime.getStop() < Timing::PERIOD_DEBOUNCE)
+    if (millis() - statTime.getTimeStop() < Timing::PERIOD_DEBOUNCE)
     {
       return;
     }
@@ -122,8 +122,8 @@ public:
   inline word getRainDuration() { return rain_.duration; }
   inline float getRainVolume() { return rain_.volume; }
   inline float getRainRate() { return rain_.rate; }
-  inline unsigned long getRainStart() { return statTime.getStart(); }
-  inline unsigned long getRainStop() { return statTime.getStop(); }
+  inline unsigned long getRainStart() { return statTime.getTimeStart(); }
+  inline unsigned long getRainStop() { return statTime.getTimeStop(); }
   inline unsigned long getTips() { return statTime.getCnt(); }
   inline unsigned long getTipsGapMin() { return statTime.getMin(); }
   inline unsigned long getTipsGapMax() { return statTime.getMax(); }
@@ -196,9 +196,9 @@ private:
     SERIAL_VALUE("tipGabMin", getTipsGapMin())
     SERIAL_VALUE("tipGabMax", getTipsGapMax())
     SERIAL_VALUE("tipGabAvg", getTipsGapAvg())
-    if (handlers_.onEvaluate != nullptr)
+    if (handlers_.onRainfallRun != nullptr)
     {
-      handlers_.onEvaluate();
+      handlers_.onRainfallRun();
     }
   }
   /*
@@ -214,7 +214,7 @@ private:
   */
   void rainfallEnd()
   {
-    word offset = (millis() - statTime.getStop()) / 60000;
+    word offset = (millis() - statTime.getTimeStop()) / 60000;
     if (rain_.flPending && (offset >= rain_.offset))
     {
       SERIAL_VALUE("Rainfall", "STOP")
