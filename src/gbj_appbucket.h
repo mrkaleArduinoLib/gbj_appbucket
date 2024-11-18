@@ -24,6 +24,7 @@
 #endif
 #include "config_params_stats.h"
 #include "gbj_appcore.h"
+#include "gbj_apphelpers.h"
 #include "gbj_appstatistics.h"
 #include "gbj_serial_debug.h"
 
@@ -54,7 +55,7 @@ public:
     parameters.
 
     PARAMETERS:
-    rainfallOffset - Time in minutes from recent tip to determine end of a
+    rainfallOffset - Time in minutes from single tip to determine end of a
     rainfall.
        - Data type: unsigned integer
        - Default value: none
@@ -69,7 +70,7 @@ public:
   */
   inline gbj_appbucket(word rainfallOffset, Handlers handlers = Handlers())
   {
-    rain_.offset = rainfallOffset;
+    rain_.offsetMax = rainfallOffset * 60000;
     handlers_ = handlers;
   }
 
@@ -135,10 +136,15 @@ private:
     // Debouncing delay in milliseconds
     PERIOD_DEBOUNCE = 500,
   };
+  enum Params : byte
+  {
+    // Multiplicator to determine an observation period of rainfall phase
+    PARAM_ACTIVE_END_COEF = 5,
+  };
   struct Rain
   {
-    // Delay in minutes from recent tip determining rainfall end
-    word offset;
+    // Maximal delay from recent tip determining rainfall end
+    unsigned long offsetMax;
     // Overall rain time in seconds
     unsigned long duration;
     // Millimeters
@@ -149,7 +155,11 @@ private:
     bool flPending;
     // Flag about new tips
     bool flTips;
-    void reset() { duration = volume = rate = 0; }
+    void reset()
+    {
+      duration = volume = rate = 0;
+      flPending = flTips = false;
+    }
   } rain_;
   // Rain millimeters per bucket tick
   const float BUCKET_FACTOR = 0.2794;
@@ -177,13 +187,8 @@ private:
       }
     }
     // Evaluate
-    unsigned long duration = statTime.get();
-    // Convert from milliseconds to seconds and round
-    duration += 500;
-    duration /= 1000;
-    // Evaluate
     rain_.volume = float(statTime.getCnt() * BUCKET_FACTOR);
-    rain_.duration = duration;
+    rain_.duration = gbj_apphelpers::convertMs2Sec(statTime.get());
     rain_.rate = 0;
     if (rain_.duration > 0)
     {
@@ -193,9 +198,9 @@ private:
     SERIAL_VALUE("rainDuration", getRainDuration())
     SERIAL_VALUE("rainRate", getRainRate())
     SERIAL_VALUE("tipCnt", getTips())
-    SERIAL_VALUE("tipGabMin", getTipsGapMin())
-    SERIAL_VALUE("tipGabMax", getTipsGapMax())
-    SERIAL_VALUE("tipGabAvg", getTipsGapAvg())
+    SERIAL_VALUE("tipGapMin", getTipsGapMin())
+    SERIAL_VALUE("tipGapMax", getTipsGapMax())
+    SERIAL_VALUE("tipGapAvg", getTipsGapAvg())
     if (handlers_.onRainfallRun != nullptr)
     {
       handlers_.onRainfallRun();
@@ -205,8 +210,8 @@ private:
     Rain end detection.
 
     DESCRIPTION:
-    The method detects a rainfall end by elapsed predefined minutes after recent
-    bucket tip.
+    The method detects a rainfall end by elapsed predefined multiple of average
+    time period among bucket tips.
 
     PARAMETERS: None
 
@@ -214,9 +219,20 @@ private:
   */
   void rainfallEnd()
   {
-    word offset = (millis() - statTime.getTimeStop()) / 60000;
-    if (rain_.flPending && (offset >= rain_.offset))
+    if (!rain_.flPending)
     {
+      return;
+    }
+    unsigned long offset = millis() - statTime.getTimeStop();
+    unsigned long offsetLimit =
+      (statTime.getCnt() == 1
+         ? rain_.offsetMax
+         : min(statTime.getMax() * Params::PARAM_ACTIVE_END_COEF,
+               rain_.offsetMax));
+    if (offset >= offsetLimit)
+    {
+      SERIAL_VALUE("offset", offset)
+      SERIAL_VALUE("offsetLimit", offsetLimit)
       SERIAL_VALUE("Rainfall", "STOP")
       rain_.flPending = false;
       if (handlers_.onRainfallStop != nullptr)
