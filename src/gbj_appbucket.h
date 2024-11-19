@@ -27,6 +27,7 @@
 #include "gbj_apphelpers.h"
 #include "gbj_appstatistics.h"
 #include "gbj_serial_debug.h"
+#include "gbj_timer.h"
 
 #undef SERIAL_PREFIX
 #define SERIAL_PREFIX "gbj_appbucket"
@@ -72,6 +73,7 @@ public:
   {
     rain_.offsetMax = rainfallOffset * 60000;
     handlers_ = handlers;
+    timer_ = new gbj_timer(Timing::PERIOD_END);
   }
 
   /*
@@ -114,8 +116,12 @@ public:
     {
       rainEvaluate();
       rain_.flTips = false;
+      timer_->reset();
     }
-    rainfallEnd();
+    if (timer_->run())
+    {
+      rainfallEnd();
+    }
   }
 
   // Getters
@@ -135,6 +141,8 @@ private:
   {
     // Debouncing delay in milliseconds
     PERIOD_DEBOUNCE = 500,
+    // Period for detecting end of rainfall
+    PERIOD_END = 5000,
   };
   enum Params : byte
   {
@@ -164,6 +172,7 @@ private:
   // Rain millimeters per bucket tick
   const float BUCKET_FACTOR = 0.2794;
   Handlers handlers_;
+  gbj_timer *timer_;
   /*
     Rain evaluation.
 
@@ -176,7 +185,12 @@ private:
   */
   void rainEvaluate()
   {
-    // Determine rain
+    // Ignore the very first tip
+    if (statTime.getCnt() < 2)
+    {
+      return;
+    }
+    // Register rainfall start
     if (!rain_.flPending)
     {
       SERIAL_VALUE("Rainfall", "START")
@@ -210,8 +224,8 @@ private:
     Rain end detection.
 
     DESCRIPTION:
-    The method detects a rainfall end by elapsed predefined multiple of average
-    time period among bucket tips.
+    The method detects a rainfall end by elapsed predefined time since recent
+    bucket tip.
 
     PARAMETERS: None
 
@@ -219,28 +233,34 @@ private:
   */
   void rainfallEnd()
   {
-    if (!rain_.flPending)
+    // Determine pending rainfall end
+    if (rain_.flPending)
     {
-      return;
-    }
-    unsigned long offset = millis() - statTime.getTimeStop();
-    unsigned long offsetLimit =
-      (statTime.getCnt() == 1
-         ? rain_.offsetMax
-         : min(statTime.getMax() * Params::PARAM_ACTIVE_END_COEF,
-               rain_.offsetMax));
-    if (offset >= offsetLimit)
-    {
-      SERIAL_VALUE("offset", offset)
-      SERIAL_VALUE("offsetLimit", offsetLimit)
-      SERIAL_VALUE("Rainfall", "STOP")
-      rain_.flPending = false;
-      if (handlers_.onRainfallStop != nullptr)
+      unsigned long offsetLimit =
+        min(statTime.getMax() * Params::PARAM_ACTIVE_END_COEF, rain_.offsetMax);
+      if (millis() - statTime.getTimeStop() >= offsetLimit)
       {
-        handlers_.onRainfallStop();
+        SERIAL_VALUE("Rainfall", "STOP")
+        SERIAL_VALUE("offsetLimit", offsetLimit)
+        rain_.flPending = false;
+        if (handlers_.onRainfallStop != nullptr)
+        {
+          handlers_.onRainfallStop();
+        }
+        statTime.reset();
+        rain_.reset();
       }
-      statTime.reset();
-      rain_.reset();
+    }
+    // No rainfall
+    else
+    {
+      // Close rainfall at single tip and after expiry time
+      if (statTime.getCnt() == 1 &&
+          millis() - statTime.getTimeStop() > rain_.offsetMax)
+      {
+        statTime.reset();
+      }
+      return;
     }
   }
 };
