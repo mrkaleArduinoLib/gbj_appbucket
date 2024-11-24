@@ -40,7 +40,6 @@ class gbj_appbucket
 {
 public:
   typedef void Handler();
-  StatisticTime statTime = StatisticTime(lblStatsIntervalTime);
 
   struct Handlers
   {
@@ -90,12 +89,12 @@ public:
   */
   inline void isr()
   {
-    if (millis() - statTime.getTimeStop() < Timing::PERIOD_DEBOUNCE)
+    if (millis() - statTime_.getTimeStop() < Timing::PERIOD_DEBOUNCE)
     {
       return;
     }
     rain_.flTips = true;
-    statTime.set(millis());
+    statTime_.set(millis());
     SERIAL_TITLE("ISR")
   }
 
@@ -129,12 +128,12 @@ public:
   inline word getRainDuration() { return rain_.duration; }
   inline float getRainVolume() { return rain_.volume; }
   inline float getRainRate() { return rain_.rate; }
-  inline unsigned long getRainStart() { return statTime.getTimeStart(); }
-  inline unsigned long getRainStop() { return statTime.getTimeStop(); }
-  inline unsigned long getTips() { return statTime.getCnt(); }
-  inline unsigned long getTipsGapMin() { return statTime.getMin(); }
-  inline unsigned long getTipsGapMax() { return statTime.getMax(); }
-  inline unsigned long getTipsGapAvg() { return statTime.getAvg(); }
+  inline unsigned long getRainStart() { return statTime_.getTimeStart(); }
+  inline unsigned long getRainStop() { return statTime_.getTimeStop(); }
+  inline unsigned long getTips() { return statTime_.getCnt(); }
+  inline unsigned long getTipsGapMin() { return statTime_.getMin(); }
+  inline unsigned long getTipsGapMax() { return statTime_.getMax(); }
+  inline unsigned long getTipsGapAvg() { return statTime_.getAvg(); }
 
 private:
   enum Timing : word
@@ -172,6 +171,7 @@ private:
   // Rain millimeters per bucket tick
   const float BUCKET_FACTOR = 0.2794;
   Handlers handlers_;
+  StatisticTime statTime_ = StatisticTime(lblStatsIntervalTime);
   gbj_timer *timer_;
   /*
     Rain evaluation.
@@ -186,7 +186,7 @@ private:
   void rainEvaluate()
   {
     // Ignore the very first tip
-    if (statTime.getCnt() < 2)
+    if (statTime_.getCnt() < 2)
     {
       return;
     }
@@ -201,8 +201,8 @@ private:
       }
     }
     // Evaluate
-    rain_.volume = float(statTime.getCnt() * BUCKET_FACTOR);
-    rain_.duration = gbj_apphelpers::convertMs2Sec(statTime.get());
+    rain_.volume = float(statTime_.getCnt() * BUCKET_FACTOR);
+    rain_.duration = gbj_apphelpers::convertMs2Sec(statTime_.get());
     rain_.rate = 0;
     if (rain_.duration > 0)
     {
@@ -237,8 +237,8 @@ private:
     if (rain_.flPending)
     {
       unsigned long offsetLimit =
-        min(statTime.getMax() * Params::PARAM_ACTIVE_END_COEF, rain_.offsetMax);
-      if (millis() - statTime.getTimeStop() >= offsetLimit)
+        min(statTime_.getMax() * Params::PARAM_ACTIVE_END_COEF, rain_.offsetMax);
+      if (millis() - statTime_.getTimeStop() >= offsetLimit)
       {
         SERIAL_VALUE("Rainfall", "STOP")
         SERIAL_VALUE("offsetLimit", offsetLimit)
@@ -247,7 +247,7 @@ private:
         {
           handlers_.onRainfallStop();
         }
-        statTime.reset();
+        statTime_.reset();
         rain_.reset();
       }
     }
@@ -255,10 +255,10 @@ private:
     else
     {
       // Close rainfall at single tip and after expiry time
-      if (statTime.getCnt() == 1 &&
-          millis() - statTime.getTimeStop() > rain_.offsetMax)
+      if (statTime_.getCnt() == 1 &&
+          millis() - statTime_.getTimeStop() > rain_.offsetMax)
       {
-        statTime.reset();
+        statTime_.reset();
       }
       return;
     }
