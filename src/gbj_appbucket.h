@@ -171,7 +171,7 @@ private:
   // Rain millimeters per bucket tick
   const float BUCKET_FACTOR = 0.2794;
   Handlers handlers_;
-  StatisticTime statTime_ = StatisticTime(lblStatsIntervalTime);
+  StatisticTime statTime_ = StatisticTime();
   gbj_timer *timer_;
   /*
     Rain evaluation.

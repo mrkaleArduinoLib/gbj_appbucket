@@ -15,7 +15,7 @@
   ],
   "dependencies": {
     "mrkaleArduinoLib/gbj_appcore": "*",
-    "mrkaleArduinoLib/gbj_appstatistics": "^1.6.0",
+    "mrkaleArduinoLib/gbj_appstatistics": "^1.10.0",
     "mrkaleArduinoLib/gbj_serial_debug": "*"
   }
 }
