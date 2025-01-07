@@ -139,7 +139,7 @@ private:
   enum Timing : word
   {
     // Debouncing delay in milliseconds
-    PERIOD_DEBOUNCE = 500,
+    PERIOD_DEBOUNCE = 1000,
     // Period for detecting end of rainfall
     PERIOD_END = 5000,
   };
