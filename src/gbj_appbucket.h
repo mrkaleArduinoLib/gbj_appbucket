@@ -111,6 +111,7 @@ public:
     DESCRIPTION:
     The method should be called frequently either in an application sketch loop
     or in a timer handler.
+    - Until NTP boot the method does not evaluate rainfall, just collects tips.
 
     PARAMETERS: None
 
@@ -118,6 +119,13 @@ public:
   */
   inline void run()
   {
+    // Ignore rainfall evaluation before NTP boot
+    if (rain_.timeBoot == 0)
+    {
+      return;
+    }
+
+    // Evaluate rainfall
     if (rain_.flTips)
     {
       rainEvaluate();
