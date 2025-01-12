@@ -134,10 +134,10 @@ public:
   inline void setTimeBoot(unsigned long timeBoot)
   {
     // Set epoch time of MCU boot only once
-    if (rain_.timeBoot == 0)
+    if (rain_.timeBoot == 0 && timeBoot > 0)
     {
       rain_.timeBoot = timeBoot;
-      // Some bucket tips were collected before the MCU boot
+      // Some bucket tips were collected before the NTP boot
       if (statTime_.timeStart > 0)
       {
         statTime_.timeStart += rain_.timeBoot;
