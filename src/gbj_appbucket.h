@@ -1,19 +1,18 @@
-/*
-  NAME:
-  gbj_appbucket
-
-  DESCRIPTION:
-  Application library for processing tips of Rainfall Tipping Bucket.
-  - The library processes tips caught with external interrupts.
-
-  LICENSE:
-  This program is free software; you can redistribute it and/or modify
-  it under the terms of the license GNU GPL v3
-  http://www.gnu.org/licenses/gpl-3.0.html (related to original code) and MIT
-  License (MIT) for added code.
-
-  CREDENTIALS:
-  Author: Libor Gabaj
+/**
+ * @name gbj_appbucket
+ *
+ * @brief Application library for processing tips of Rainfall Tipping Bucket.
+ *
+ * @note The library processes tips caught with external interrupts.
+ *
+ * @copyright This program is free software; you can redistribute it and/or
+ * modify it under the terms of the license GNU GPL v3
+ * http://www.gnu.org/licenses/gpl-3.0.html (related to original code) and MIT
+ * License (MIT) for added code.
+ *
+ * @author Libor Gabaj
+ *
+ * @see https://github.com/ayushsharma82/EasyDDNS
  */
 #ifndef GBJ_APPBUCKET_H
 #define GBJ_APPBUCKET_H
@@ -31,9 +30,8 @@
 
 #undef SERIAL_PREFIX
 #define SERIAL_PREFIX "gbj_appbucket"
-//******************************************************************************
-// Class definition
-//******************************************************************************
+
+// Class definition for updating DDNS service
 class gbj_appbucket
   : gbj_appcore
   , gbj_appstatistics
@@ -47,29 +45,15 @@ public:
     Handler *onRainfallStop;
     Handler *onRainfallRun;
   };
-  /*
-    Constructor
 
-    DESCRIPTION:
-    Constructor creates the class instance object and sets operational
-    parameters.
-
-    PARAMETERS:
-
-    rainfallOffset - Time in minutes from last tip to determine end of a
-    rainfall.
-       - Data type: unsigned integer
-       - Default value: none
-       - Limited range: 0 ~ 255
-
-    handlers - A structure with pointers to various callback handler functions.
-      - Data type: Handlers
-      - Default value: structure with zeroed all handlers
-      - Limited range: system address range
-
-
-    RETURN: object
-  */
+  /**
+   * @brief Constructor
+   *
+   * @param rainfallOffset Time in minutes from last tip to determine end of a
+   * rainfall.
+   * @param handlers A structure with pointers to various callback handler
+   * functions.
+   */
   inline gbj_appbucket(byte rainfallOffset, Handlers handlers = Handlers())
   {
     rain_.offsetMax = rainfallOffset * 60;
@@ -89,6 +73,13 @@ public:
 
     RETURN: none
   */
+  /**
+   * @brief Interruption Service Routing.
+   *
+   * @note The method collects random tips from a rain tip bucket.
+   * @warning The method should be called in a main sketch ISR attached to the
+   * bucket pin.
+   */
   inline void isr()
   {
     // Debouncing
@@ -105,18 +96,13 @@ public:
     SERIAL_TITLE("ISR")
   }
 
-  /*
-    Processing.
-
-    DESCRIPTION:
-    The method should be called frequently either in an application sketch loop
-    or in a timer handler.
-    - Until NTP boot the method does not evaluate rainfall, just collects tips.
-
-    PARAMETERS: None
-
-    RETURN: None
-  */
+  /**
+   * @brief Processing
+   * @note The method should be called frequently either in an application
+   * sketch loop or in a timer handler.
+   * @note Until NTP boot the method does not evaluate rainfall, just collects
+   * tips.
+   */
   inline void run()
   {
     // Ignore rainfall evaluation before NTP boot
@@ -145,6 +131,7 @@ public:
     if (rain_.timeBoot == 0 && timeBoot > 0)
     {
       rain_.timeBoot = timeBoot;
+
       // Some bucket tips were collected before the NTP boot
       if (statTime_.timeStart > 0)
       {
@@ -201,11 +188,12 @@ public:
 
 private:
   // Timing constants
-  enum Timing : word
+  enum Timing : unsigned long
   {
     // Debouncing delay in milliseconds
     PERIOD_DEBOUNCE = 1200,
-    // Period for detecting end of rainfall
+
+    // Period in milliseconds for detecting end of rainfall
     PERIOD_END = 5000,
   };
 
@@ -263,16 +251,10 @@ private:
   // Internal timer actuator
   gbj_timer *timer_;
 
-  /*
-    Rain evaluation.
-
-    DESCRIPTION:
-    The method evaluates the rain tips collected so far.
-
-    PARAMETERS: None
-
-    RETURN: none
-  */
+  /**
+   * @brief Rain evaluation
+   * @note  The method evaluates the rain tips collected so far.
+   */
   void rainEvaluate()
   {
     // Ignore the very first tip
@@ -315,17 +297,11 @@ private:
     }
   }
 
-  /*
-    Rain end detection.
-
-    DESCRIPTION:
-    The method detects a rainfall end by elapsed predefined time since recent
-    bucket tip.
-
-    PARAMETERS: None
-
-    RETURN: none
-  */
+  /**
+   * @brief Rain end detection
+   * @note  The method detects a rainfall end by elapsed predefined time since
+   * recent bucket tip.
+   */
   void rainfallEnd()
   {
     // Wait for NTP boot

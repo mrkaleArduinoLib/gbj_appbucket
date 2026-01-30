@@ -1,6 +1,6 @@
 {
   "name": "gbj_appbucket",
-  "version": "1.12.0",
+  "version": "1.12.1",
   "description": "Library processes rainfall tipping bucket as a sensor.",
   "keywords": "application",
   "repository": {
