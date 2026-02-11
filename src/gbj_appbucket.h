@@ -31,7 +31,14 @@
 #undef SERIAL_PREFIX
 #define SERIAL_PREFIX "gbj_appbucket"
 
-// Class definition for updating DDNS service
+/**
+ * @brief Class definition for processing tips of Rainfall Tipping Bucket.
+ *
+ * @param rainfallOffset Time in minutes from last tip to determine end of a
+ * rainfall.
+ * @param handlers A structure with pointers to various callback handler
+ * functions.
+ */
 class gbj_appbucket
   : gbj_appcore
   , gbj_appstatistics
